@@ -35,7 +35,7 @@ const rawPosts: Post[] = [
   {
     id: 'post_003',
     title: 'Diaspora: send a real gift, not just money',
-    body: `You've been sending orange money and LBDI transfers for years. Your family appreciates it — but you know what would mean even more?\n\nSending them something they can touch. A beautiful lappa set. A Liberian Brew gift box. A meal from their favorite Monrovia restaurant, pre-paid and ready.\n\nLeenqUp lets you shop directly from verified Liberian sellers and send real gifts to family back home — with proof-based seller ratings and receipt-backed transactions so your money is never in the dark.\n\nLiberia for us. By us. 🇱🇷\n\n#LiberianDiaspora #SendHomeLiberia #LeenqUp #Diaspora #LiberiaPride`,
+    body: `You've been sending orange money and LBDI transfers for years. Your family appreciates it — but you know what would mean even more?\n\nSending them something they can touch. A beautiful lappa set. A Liberian Brew gift box. A meal from their favorite Monrovia restaurant, pre-paid and ready.\n\nLeenqUp lets you shop directly from identity-confirmed Liberian sellers and send real gifts to family back home — with proof-based seller ratings and receipt-backed transactions so your money is never in the dark.\n\nLiberia for us. By us. 🇱🇷\n\n#LiberianDiaspora #SendHomeLiberia #LeenqUp #Diaspora #LiberiaPride`,
     platform: 'instagram',
     audience: 'diaspora',
     pillar: 'education',
@@ -166,7 +166,7 @@ const rawPosts: Post[] = [
   {
     id: 'post_012',
     title: 'Facebook: Diaspora — how to shop for family in Liberia',
-    body: `For all our Liberian family in the US — this one is for you.\n\nYou want to support businesses back home. You want to send something real to your family in Monrovia, Paynesville, or Buchanan. But coordinating purchases across time zones, through WhatsApp, with no receipts and no accountability is a headache every time.\n\nLeenqUp solves this.\n\nBrowse real Liberian sellers — fashion, food, beauty, gifts. Every seller has business details provided and a verified transaction history. You pick what you want to send, pay securely, and your family receives it. You get a receipt. They get the goods.\n\nSimple. Trustworthy. Liberian.\n\nJoin our diaspora waiting list at LeenqUp.com. 🇱🇷\n\n#LiberianDiaspora #SendHomeLiberia #LeenqUp #SupportLiberianBusiness #DiasporaShopping`,
+    body: `For all our Liberian family in the US — this one is for you.\n\nYou want to support businesses back home. You want to send something real to your family in Monrovia, Paynesville, or Buchanan. But coordinating purchases across time zones, through WhatsApp, with no receipts and no accountability is a headache every time.\n\nLeenqUp solves this.\n\nBrowse real Liberian sellers — fashion, food, beauty, gifts. Every seller has business details provided and a confirmed transaction history. You pick what you want to send, pay securely, and your family receives it. You get a receipt. They get the goods.\n\nSimple. Trustworthy. Liberian.\n\nJoin our diaspora waiting list at LeenqUp.com. 🇱🇷\n\n#LiberianDiaspora #SendHomeLiberia #LeenqUp #SupportLiberianBusiness #DiasporaShopping`,
     platform: 'facebook',
     audience: 'diaspora',
     pillar: 'education',

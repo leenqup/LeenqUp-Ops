@@ -207,6 +207,8 @@ export interface Merchant {
   county?: string                   // Liberia county (Montserrado, Nimba, Margibi, etc.)
   address?: string                  // Physical street address
   trueliberiaUrl?: string           // Source URL on trueliberia.com
+  // Integration fields
+  notionPageId?: string             // Notion page ID stored after first sync (idempotent updates)
 }
 
 export interface AppSettings {
@@ -217,6 +219,11 @@ export interface AppSettings {
   notionDatabaseId?: string
   slackWebhookUrl?: string
   makeWebhookUrl?: string
+  // Google Sheets
+  googleSheetsCredentials?: string  // Service account credentials JSON (never synced to Supabase)
+  googleSheetsId?: string           // Spreadsheet ID from the Sheets URL
+  // Make.com inbound
+  makeInboundSecret?: string        // Shared secret for X-LeenqUp-Secret header validation
 }
 
 export interface ConnectionStatus {

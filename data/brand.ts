@@ -323,7 +323,7 @@ Here's what Facebook Marketplace lacks for buyers and sellers in Liberia and the
 
 **No seller history tied to actual completed transactions.** Facebook reviews and ratings aren't tied to purchase-verified transactions. On LeenqUp, every review is receipt-backed — meaning only real buyers who completed a purchase can leave one.
 
-Facebook is where people discover businesses. LeenqUp is where they buy from them safely. Many of our sellers use both — and that's smart.`,
+Facebook is where people discover businesses. LeenqUp is where they buy from them with proof-based trust. Many of our sellers use both — and that's smart.`,
     createdAt: '2026-04-10T00:00:00Z',
     updatedAt: '2026-04-10T00:00:00Z',
   },

@@ -24,7 +24,7 @@ export const campaigns: Campaign[] = [
     },
     whatsappBroadcast: `🇱🇷 Something big is coming for Liberia.
 
-We're building LeenqUp — a marketplace where Liberian sellers can list their products online and buyers anywhere in the world (including right here in Monrovia) can shop safely, pay easily, and support businesses they know.
+We're building LeenqUp — a marketplace where Liberian sellers can list their products online and buyers anywhere in the world (including right here in Monrovia) can shop with confidence, pay easily, and support businesses they know.
 
 No more "send money first and hope for the best." On LeenqUp:
 ✅ Every seller has their identity confirmed and business details on file
@@ -111,7 +111,7 @@ LeenqUp just launched. Right now. Today.
 Liberia's first social commerce marketplace is open — and you can shop or sell starting right now.
 
 🛒 FOR BUYERS:
-Browse Liberian sellers, find products you love, and pay safely via Orange Money or card. Every seller has their identity confirmed and business profile on file. Shop with confidence.
+Browse Liberian sellers, find products you love, and pay via Orange Money or card with confidence. Every seller has their identity confirmed and business profile on file. Shop with confidence.
 
 👉 Shop now: [LeenqUp marketplace link]
 

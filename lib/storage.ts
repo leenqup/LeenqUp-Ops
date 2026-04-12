@@ -58,8 +58,9 @@ function getItem<T>(key: string): T | null {
   }
 }
 
-// Keys that should NOT be synced to Supabase (device-local only)
-// Settings contains API keys/tokens — keep them off the shared DB
+// Keys that should NOT be synced to Supabase (device-local only).
+// Settings contains API keys, service account credentials, and tokens —
+// all of which are personal/sensitive and must never leave the local device.
 const LOCAL_ONLY_KEYS = new Set([KEYS.settings, KEYS.seeded])
 
 function setItem<T>(key: string, value: T): void {

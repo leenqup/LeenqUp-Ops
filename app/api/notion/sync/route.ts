@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { kvGet, kvSet } from '@/lib/supabase'
 
 interface NotionProperty {
   title?: Array<{ text: { content: string } }>
@@ -49,33 +50,60 @@ export async function POST(req: NextRequest) {
     'Notion-Version': '2022-06-28',
   }
 
-  const results: Array<{ name: string; action: 'created' | 'updated' | 'error'; error?: string }> = []
+  type SyncResult = { id: string; name: string; action: 'created' | 'updated' | 'error'; notionPageId?: string; error?: string }
+  const results: SyncResult[] = []
+
+  // Track which merchant IDs had their notionPageId set for the first time,
+  // so we can write them back to Supabase in one batch after the loop.
+  const newPageIds: Record<string, string> = {}
 
   for (const merchant of merchants) {
     try {
-      // Check if page exists by searching for the name
-      const searchRes = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          filter: { property: 'Name', title: { equals: merchant.name } },
-          page_size: 1,
-        }),
-      })
-      const searchData = await searchRes.json()
-      const existing = searchData.results?.[0]
+      const merchantId: string = merchant.id ?? ''
 
-      if (existing) {
-        // Update
-        await fetch(`https://api.notion.com/v1/pages/${existing.id}`, {
+      // ── Idempotent lookup strategy ──────────────────────────────────────────
+      // 1. If the merchant already has a notionPageId, update that page directly.
+      //    This avoids name-collision bugs (two merchants named "Shoprite").
+      // 2. If no notionPageId exists, fall back to name search to prevent creating
+      //    duplicates on re-run. Then store the returned page ID on the merchant.
+      // 3. If no name match either, create a new page and store the new ID.
+
+      let pageId: string | null = merchant.notionPageId ?? null
+
+      if (!pageId) {
+        // Name-based fallback search
+        const searchRes = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            filter: { property: 'Name', title: { equals: merchant.name } },
+            page_size: 1,
+          }),
+        })
+        const searchData = await searchRes.json()
+        pageId = searchData.results?.[0]?.id ?? null
+      }
+
+      if (pageId) {
+        // Update existing page
+        const updateRes = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
           method: 'PATCH',
           headers,
           body: JSON.stringify({ properties: merchantToNotionProperties(merchant) }),
         })
-        results.push({ name: merchant.name, action: 'updated' })
+        if (!updateRes.ok) {
+          const e = await updateRes.json()
+          results.push({ id: merchantId, name: merchant.name, action: 'error', error: e.message })
+          continue
+        }
+        results.push({ id: merchantId, name: merchant.name, action: 'updated', notionPageId: pageId })
+        // If the merchant didn't have a stored notionPageId yet, record it now
+        if (!merchant.notionPageId && merchantId) {
+          newPageIds[merchantId] = pageId
+        }
       } else {
-        // Create
-        await fetch('https://api.notion.com/v1/pages', {
+        // Create new page
+        const createRes = await fetch('https://api.notion.com/v1/pages', {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -83,12 +111,44 @@ export async function POST(req: NextRequest) {
             properties: merchantToNotionProperties(merchant),
           }),
         })
-        results.push({ name: merchant.name, action: 'created' })
+        if (!createRes.ok) {
+          const e = await createRes.json()
+          results.push({ id: merchantId, name: merchant.name, action: 'error', error: e.message })
+          continue
+        }
+        const created = await createRes.json()
+        const newPageId: string = created.id
+        results.push({ id: merchantId, name: merchant.name, action: 'created', notionPageId: newPageId })
+        if (merchantId) {
+          newPageIds[merchantId] = newPageId
+        }
       }
     } catch (err) {
-      results.push({ name: merchant.name, action: 'error', error: String(err) })
+      results.push({ id: merchant.id ?? '', name: merchant.name, action: 'error', error: String(err) })
     }
   }
 
-  return NextResponse.json({ success: true, results })
+  // ── Write notionPageId back to Supabase ──────────────────────────────────
+  // Update the merchant records in Supabase with the newly assigned Notion page IDs
+  // so future syncs skip the name-search and update the correct page directly.
+  if (Object.keys(newPageIds).length > 0) {
+    try {
+      const stored = (await kvGet('leenqup_merchants')) as Array<Record<string, unknown>> | null
+      if (Array.isArray(stored)) {
+        const updated = stored.map(m => {
+          const id = String(m.id ?? '')
+          return newPageIds[id] ? { ...m, notionPageId: newPageIds[id] } : m
+        })
+        await kvSet('leenqup_merchants', updated)
+      }
+    } catch {
+      // Non-fatal — notionPageIds will be re-resolved by name on the next sync
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    results,
+    newPageIdsWritten: Object.keys(newPageIds).length,
+  })
 }

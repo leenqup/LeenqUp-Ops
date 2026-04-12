@@ -24,7 +24,12 @@ import {
   CloudDownload,
   CloudUpload,
   Wifi,
+  Sheet,
+  Copy,
+  ExternalLink,
+  ArrowDownToLine,
 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -178,12 +183,12 @@ function BufferCard({ settings, onSettingsChange }: {
     setTestStatus('loading')
     setProfiles([])
     try {
+      // Buffer test route is a GET handler — pass token via header, no body needed
       const res = await fetch('/api/buffer/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: token }),
+        method: 'GET',
+        headers: { 'x-buffer-token': token },
       })
-      const data: { success: boolean; message?: string } & BufferTestResult = await res.json()
+      const data: { success: boolean; error?: string; message?: string } & BufferTestResult = await res.json()
       if (data.success) {
         setTestStatus('success')
         setProfiles(data.profiles ?? [])
@@ -192,7 +197,7 @@ function BufferCard({ settings, onSettingsChange }: {
           : 'Connected successfully.')
       } else {
         setTestStatus('error')
-        setTestMessage(data.message ?? 'Connection failed. Check your token.')
+        setTestMessage(data.error ?? data.message ?? 'Connection failed. Check your token.')
       }
     } catch {
       setTestStatus('error')
@@ -614,6 +619,185 @@ function SlackCard({ settings, onSettingsChange }: {
   )
 }
 
+// ─── Google Sheets Card ───────────────────────────────────────────────────────
+
+function GoogleSheetsCard({ settings, onSettingsChange }: {
+  settings: AppSettings
+  onSettingsChange: (s: AppSettings) => void
+}) {
+  const [credentials, setCredentials] = useState(settings.googleSheetsCredentials ?? '')
+  const [sheetId, setSheetId] = useState(settings.googleSheetsId ?? '')
+  const [testStatus, setTestStatus] = useState<TestStatus>('idle')
+  const [testMessage, setTestMessage] = useState('')
+  const [syncStatus, setSyncStatus] = useState<TestStatus>('idle')
+  const [syncMessage, setSyncMessage] = useState('')
+  const connectionStatus = settings.googleSheetsId && settings.googleSheetsCredentials
+    ? (testStatus === 'success' ? 'connected' : 'unknown')
+    : 'disconnected'
+
+  useEffect(() => {
+    setCredentials(settings.googleSheetsCredentials ?? '')
+    setSheetId(settings.googleSheetsId ?? '')
+  }, [settings.googleSheetsCredentials, settings.googleSheetsId])
+
+  const handleSave = () => {
+    const updated = { ...settings, googleSheetsCredentials: credentials || undefined, googleSheetsId: sheetId.trim() || undefined }
+    saveSettings(updated)
+    onSettingsChange(updated)
+    toast('Google Sheets settings saved')
+    setTestStatus('idle')
+  }
+
+  const handleClear = () => {
+    setCredentials('')
+    setSheetId('')
+    const updated = { ...settings, googleSheetsCredentials: undefined, googleSheetsId: undefined }
+    saveSettings(updated)
+    onSettingsChange(updated)
+    setTestStatus('idle')
+    setTestMessage('')
+    toast('Google Sheets settings cleared')
+  }
+
+  const handleTest = async () => {
+    if (!credentials.trim() || !sheetId.trim()) {
+      toast('Enter credentials JSON and Sheet ID first', 'error')
+      return
+    }
+    setTestStatus('loading')
+    try {
+      const res = await fetch('/api/sheets/test', {
+        method: 'GET',
+        headers: {
+          'x-gsheets-credentials': credentials,
+          'x-gsheets-sheet-id': sheetId.trim(),
+        },
+      })
+      const data: { success: boolean; title?: string; tabs?: string[]; error?: string } = await res.json()
+      if (data.success) {
+        setTestStatus('success')
+        setTestMessage(`Connected! Sheet: "${data.title}". ${data.tabs?.length ?? 0} tab(s).`)
+      } else {
+        setTestStatus('error')
+        setTestMessage(data.error ?? 'Connection failed')
+      }
+    } catch {
+      setTestStatus('error')
+      setTestMessage('Network error. Could not reach Google Sheets API.')
+    }
+  }
+
+  const handleSyncMerchants = async () => {
+    if (!credentials.trim() || !sheetId.trim()) {
+      toast('Save credentials and Sheet ID first', 'error')
+      return
+    }
+    setSyncStatus('loading')
+    setSyncMessage('')
+    try {
+      const { getMerchants } = await import('@/lib/storage')
+      const merchants = getMerchants()
+      const res = await fetch('/api/sheets/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-gsheets-credentials': credentials,
+          'x-gsheets-sheet-id': sheetId.trim(),
+        },
+        body: JSON.stringify({ type: 'merchants', data: merchants }),
+      })
+      const data: { success?: boolean; rowsWritten?: number; tab?: string; sheetUrl?: string; error?: string } = await res.json()
+      if (data.success) {
+        setSyncStatus('success')
+        setSyncMessage(`Exported ${data.rowsWritten} merchants to tab "${data.tab}"`)
+        toast(`Exported ${data.rowsWritten} merchants to Google Sheets`, 'success')
+      } else {
+        setSyncStatus('error')
+        setSyncMessage(data.error ?? 'Export failed')
+        toast(data.error ?? 'Export failed', 'error')
+      }
+    } catch {
+      setSyncStatus('error')
+      setSyncMessage('Export failed — check your credentials and Sheet ID')
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+              <Sheet className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <CardTitle>Google Sheets</CardTitle>
+              <CardDescription>Export merchants, posts, and scripts to a spreadsheet</CardDescription>
+            </div>
+          </div>
+          <StatusBadge status={connectionStatus} />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label>Service Account Credentials JSON</Label>
+          <Textarea
+            value={credentials}
+            onChange={e => setCredentials(e.target.value)}
+            placeholder={'{\n  "type": "service_account",\n  "client_email": "...",\n  "private_key": "..."\n}'}
+            className="mt-1 font-mono text-xs min-h-[100px]"
+          />
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+            Paste the full JSON from your Google Cloud service account. Never commit this to code.
+          </p>
+        </div>
+        <div>
+          <Label>Spreadsheet ID</Label>
+          <Input
+            value={sheetId}
+            onChange={e => setSheetId(e.target.value)}
+            placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+            className="mt-1"
+          />
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+            The ID from your Google Sheets URL:{' '}
+            <code className="bg-slate-100 dark:bg-navy-600 px-1 rounded text-xs">docs.google.com/spreadsheets/d/<strong>[ID]</strong>/edit</code>
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-blue-50 dark:bg-navy-500/50 p-3 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+          <p className="font-medium text-navy dark:text-white">Setup instructions</p>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-coral hover:underline">Google Cloud Console</a> → IAM &amp; Admin → Service Accounts → Create Service Account.</li>
+            <li>Download the JSON key file and paste the full contents above.</li>
+            <li>Open your Google Sheet → Share → paste the service account email (client_email from the JSON) → Editor access.</li>
+            <li>Copy the Sheet ID from the URL bar and paste it in the field above.</li>
+          </ol>
+        </div>
+
+        <TestResultMessage status={testStatus} message={testMessage} />
+
+        {syncStatus !== 'idle' && (
+          <TestResultMessage status={syncStatus} message={syncMessage} />
+        )}
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button size="sm" variant="secondary" onClick={handleTest} disabled={testStatus === 'loading'}>
+            {testStatus === 'loading' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Test Connection
+          </Button>
+          <Button size="sm" variant="secondary" onClick={handleSyncMerchants} disabled={syncStatus === 'loading'} className="gap-1.5">
+            {syncStatus === 'loading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowDownToLine className="h-3.5 w-3.5" />}
+            Sync Merchants Now
+          </Button>
+          <Button size="sm" onClick={handleSave}>Save</Button>
+          <Button size="sm" variant="ghost" onClick={handleClear} className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10">Clear</Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 // ─── Make.com / Zapier Webhooks Card ──────────────────────────────────────────
 
 function MakeWebhookCard({ settings, onSettingsChange }: {
@@ -621,34 +805,47 @@ function MakeWebhookCard({ settings, onSettingsChange }: {
   onSettingsChange: (s: AppSettings) => void
 }) {
   const [webhookUrl, setWebhookUrl] = useState(settings.makeWebhookUrl ?? '')
+  const [inboundSecret, setInboundSecret] = useState(settings.makeInboundSecret ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const [testMessage, setTestMessage] = useState('')
+  const [copied, setCopied] = useState(false)
   const connectionStatus = settings.makeWebhookUrl ? (testStatus === 'success' ? 'connected' : 'unknown') : 'disconnected'
+
+  // The inbound webhook URL is fixed — Make.com POSTs to this endpoint
+  const inboundUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/api/webhooks/make`
+    : '/api/webhooks/make'
 
   useEffect(() => {
     setWebhookUrl(settings.makeWebhookUrl ?? '')
-  }, [settings.makeWebhookUrl])
+    setInboundSecret(settings.makeInboundSecret ?? '')
+  }, [settings.makeWebhookUrl, settings.makeInboundSecret])
 
   const handleSave = () => {
-    const updated = { ...settings, makeWebhookUrl: webhookUrl.trim() || undefined }
+    const updated = {
+      ...settings,
+      makeWebhookUrl: webhookUrl.trim() || undefined,
+      makeInboundSecret: inboundSecret.trim() || undefined,
+    }
     saveSettings(updated)
     onSettingsChange(updated)
-    toast('Make.com / Zapier webhook saved')
+    toast('Make.com settings saved')
     setTestStatus('idle')
   }
 
   const handleClear = () => {
     setWebhookUrl('')
-    const updated = { ...settings, makeWebhookUrl: undefined }
+    setInboundSecret('')
+    const updated = { ...settings, makeWebhookUrl: undefined, makeInboundSecret: undefined }
     saveSettings(updated)
     onSettingsChange(updated)
     setTestStatus('idle')
     setTestMessage('')
-    toast('Make.com webhook cleared')
+    toast('Make.com settings cleared')
   }
 
   const handleTest = async () => {
-    if (!webhookUrl.trim()) { toast('Enter a webhook URL first', 'error'); return }
+    if (!webhookUrl.trim()) { toast('Enter an outbound webhook URL first', 'error'); return }
     setTestStatus('loading')
     try {
       const res = await fetch('/api/webhooks/merchant-update', {
@@ -675,6 +872,13 @@ function MakeWebhookCard({ settings, onSettingsChange }: {
     }
   }
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inboundUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -685,40 +889,77 @@ function MakeWebhookCard({ settings, onSettingsChange }: {
             </div>
             <div>
               <CardTitle>Make.com / Zapier Webhooks</CardTitle>
-              <CardDescription>Trigger automations on merchant updates</CardDescription>
+              <CardDescription>Outbound alerts + inbound data from automations</CardDescription>
             </div>
           </div>
           <StatusBadge status={connectionStatus} />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label>Webhook URL</Label>
-          <Input
-            type="text"
-            value={webhookUrl}
-            onChange={e => setWebhookUrl(e.target.value)}
-            placeholder="https://hook.eu1.make.com/... or https://hooks.zapier.com/..."
-            className="mt-1"
-          />
+      <CardContent className="space-y-5">
+
+        {/* Outbound section */}
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Outbound — LeenqUp → Make</p>
+          <div>
+            <Label>Outbound Webhook URL</Label>
+            <Input
+              type="text"
+              value={webhookUrl}
+              onChange={e => setWebhookUrl(e.target.value)}
+              placeholder="https://hook.eu1.make.com/... or https://hooks.zapier.com/..."
+              className="mt-1"
+            />
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">
+              When a merchant&apos;s status changes in the CRM, a POST is sent to this URL.
+            </p>
+          </div>
         </div>
-        <div className="rounded-lg bg-blue-50 dark:bg-navy-500/50 p-3 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-          <p className="font-medium text-navy dark:text-white">Setup instructions</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li><strong>Make.com:</strong> Create a scenario → add a Webhooks module → Custom webhook → copy the URL.</li>
-            <li><strong>Zapier:</strong> Create a Zap → Trigger: Webhooks by Zapier → Catch Hook → copy the URL.</li>
-          </ul>
+
+        {/* Inbound section */}
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Inbound — Make → LeenqUp</p>
+
+          <div>
+            <Label>Your LeenqUp Inbound Webhook URL</Label>
+            <div className="flex gap-2 mt-1">
+              <Input value={inboundUrl} readOnly className="font-mono text-xs bg-slate-50 dark:bg-navy-600" />
+              <Button size="sm" variant="secondary" onClick={handleCopy} className="shrink-0 gap-1.5">
+                {copied ? <CheckCircle className="h-3.5 w-3.5 text-brand-green" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Paste this URL into Make.com as the webhook target. Make.com will POST to this endpoint to push data into LeenqUp.
+            </p>
+          </div>
+
+          <div>
+            <Label>Webhook Secret</Label>
+            <div className="mt-1">
+              <PasswordInput value={inboundSecret} onChange={setInboundSecret} placeholder="A strong random string — e.g. 32+ characters" />
+            </div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              Set this in Make.com as the <code className="bg-slate-100 dark:bg-navy-600 px-1 rounded">X-LeenqUp-Secret</code> header.
+              Also add it as the <code className="bg-slate-100 dark:bg-navy-600 px-1 rounded">LEENQUP_MAKE_SECRET</code> environment variable on your server so the inbound route can validate it.
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-blue-50 dark:bg-navy-500/50 p-3 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+            <p className="font-medium text-navy dark:text-white">Supported inbound event types</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li><strong>merchant_signup</strong> — creates a new merchant from a form or CRM push</li>
+              <li><strong>lead_update</strong> — updates outreach status and appends a timestamped note</li>
+              <li><strong>post_performance</strong> — stores impressions/clicks/engagement from analytics</li>
+            </ul>
+          </div>
         </div>
-        <p className="text-xs text-slate-400 dark:text-slate-500 italic">
-          When a merchant&apos;s status changes in the CRM, a POST is automatically sent to this URL with the merchant name, old status, and new status.
-        </p>
 
         <TestResultMessage status={testStatus} message={testMessage} />
 
         <div className="flex gap-2 pt-1">
           <Button size="sm" variant="secondary" onClick={handleTest} disabled={testStatus === 'loading'}>
             {testStatus === 'loading' && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Test Connection
+            Test Outbound
           </Button>
           <Button size="sm" onClick={handleSave}>Save</Button>
           <Button size="sm" variant="ghost" onClick={handleClear} className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10">Clear</Button>
@@ -1148,6 +1389,7 @@ export default function SettingsPage() {
             <BufferCard settings={settings} onSettingsChange={setSettings} />
             <BrevoCard settings={settings} onSettingsChange={setSettings} />
             <NotionCard settings={settings} onSettingsChange={setSettings} />
+            <GoogleSheetsCard settings={settings} onSettingsChange={setSettings} />
             <SlackCard settings={settings} onSettingsChange={setSettings} />
             <MakeWebhookCard settings={settings} onSettingsChange={setSettings} />
           </div>

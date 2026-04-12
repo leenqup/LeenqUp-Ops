@@ -1,0 +1,756 @@
+{
+  "generatedAt": "2026-04-12T09:50:23.505Z",
+  "source": "TrueLiberia_Full_Market_Intelligence.xlsx",
+  "total": 419,
+  "netNew": 299,
+  "duplicatesExcluded": 120,
+  "withPhone": 298,
+  "withEmail": 90,
+  "withWebsite": 109,
+  "byCategory": {
+    "Hotels & Resorts": 77,
+    "Restaurants": 94,
+    "Shopping": 128,
+    "Others": 47,
+    "Beauty & Spa": 28,
+    "Beaches & Outdoors": 15,
+    "Nightclubs & Bars": 25,
+    "Gym & Fitness": 5
+  },
+  "byTier": {
+    "1": 34,
+    "2": 82,
+    "3": 183
+  },
+  "byCounty": {
+    "Montserrado": 360,
+    "Bong": 4,
+    "Nimba": 8,
+    "Liberia": 35,
+    "Margibi": 7,
+    "Grand Bassa": 3,
+    "Grand Cape Mount": 2
+  },
+  "duplicates": [
+    {
+      "no": "9",
+      "name": "A&A Collection",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "16",
+      "name": "Afrilodge Hotel",
+      "method": "phone",
+      "value": "+231775200200"
+    },
+    {
+      "no": "22",
+      "name": "Alutex Aluminum Factory",
+      "method": "website-domain",
+      "value": "alutex-aluminum-factory.business.site"
+    },
+    {
+      "no": "33",
+      "name": "Atlantis Beach Hotel",
+      "method": "fuzzy-name",
+      "value": "\"atlantis beach hotel\" ~ \"the atlantis beach hotel\" (100%)"
+    },
+    {
+      "no": "39",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "46",
+      "name": "Ben2 Collection",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "58",
+      "name": "Bojelene Guest House",
+      "method": "phone",
+      "value": "+231775799009"
+    },
+    {
+      "no": "59",
+      "name": "Boulevard Palace Hotel",
+      "method": "fuzzy-name",
+      "value": "\"boulevard palace hotel\" ~ \"boulevard palace restaurant\" (100%)"
+    },
+    {
+      "no": "68",
+      "name": "Cakehouse Liberia.",
+      "method": "fuzzy-name",
+      "value": "\"cakehouse liberia.\" ~ \"cakehouse liberia\" (100%)"
+    },
+    {
+      "no": "70",
+      "name": "Cape Hotel",
+      "method": "website-domain",
+      "value": "thecapehotellib.com"
+    },
+    {
+      "no": "75",
+      "name": "Celavi Nightclub",
+      "method": "phone",
+      "value": "+231777696969"
+    },
+    {
+      "no": "85",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "90",
+      "name": "Classic Queens And Kings Fashion Store",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "91",
+      "name": "Club Montserrado",
+      "method": "fuzzy-name",
+      "value": "\"club montserrado\" ~ \"club montserrado restaurant\" (100%)"
+    },
+    {
+      "no": "94",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "97",
+      "name": "Cooper Beach",
+      "method": "phone",
+      "value": "+231777244290"
+    },
+    {
+      "no": "99",
+      "name": "Corina Hotel",
+      "method": "exact-name",
+      "value": "corina hotel"
+    },
+    {
+      "no": "106",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "107",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "108",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "109",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "111",
+      "name": "Deniz Closet",
+      "method": "phone",
+      "value": "+231880814382"
+    },
+    {
+      "no": "113",
+      "name": "Destiny African Design",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "114",
+      "name": "Diana Restaurant",
+      "method": "exact-name",
+      "value": "diana restaurant"
+    },
+    {
+      "no": "115",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "116",
+      "name": "Drey And Twins Closet",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "121",
+      "name": "Electro World Inc.",
+      "method": "phone",
+      "value": "+231886537000"
+    },
+    {
+      "no": "123",
+      "name": "Elegant Style Unisex Collection",
+      "method": "phone",
+      "value": "+231777884627"
+    },
+    {
+      "no": "127",
+      "name": "Embassy Suites Hotel & Restaurant",
+      "method": "fuzzy-name",
+      "value": "\"embassy suites hotel & restaurant\" ~ \"embassy suites restaurant\" (100%)"
+    },
+    {
+      "no": "129",
+      "name": "Era Supermarket",
+      "method": "phone",
+      "value": "+231886332556"
+    },
+    {
+      "no": "134",
+      "name": "Executive Fashion Design",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "136",
+      "name": "Ezee Market Online Shopping",
+      "method": "phone",
+      "value": "+231777934095"
+    },
+    {
+      "no": "140",
+      "name": "Farmington Hotel",
+      "method": "exact-name",
+      "value": "farmington hotel"
+    },
+    {
+      "no": "146",
+      "name": "Five (5) Senses Inc.",
+      "method": "phone",
+      "value": "+231775800188"
+    },
+    {
+      "no": "148",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "157",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "159",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "168",
+      "name": "Hajah Boutique",
+      "method": "phone",
+      "value": "+231775715355"
+    },
+    {
+      "no": "169",
+      "name": "Harbel Supermarket Corporation",
+      "method": "website-domain",
+      "value": "harbelsupermarket.com"
+    },
+    {
+      "no": "178",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "179",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "182",
+      "name": "J-Palm Liberia",
+      "method": "phone",
+      "value": "+231770537635"
+    },
+    {
+      "no": "183",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "188",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "191",
+      "name": "Jwg Beach Resort",
+      "method": "phone",
+      "value": "+231775957957"
+    },
+    {
+      "no": "195",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "198",
+      "name": "Kay Collection",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "199",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "200",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "202",
+      "name": "Kimbelle Kitchen",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "203",
+      "name": "King Salon",
+      "method": "exact-name",
+      "value": "king salon"
+    },
+    {
+      "no": "209",
+      "name": "La Clique Beauty Salon & Spa",
+      "method": "exact-name",
+      "value": "la clique beauty salon & spa"
+    },
+    {
+      "no": "214",
+      "name": "Legend Beauty Salon",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "217",
+      "name": "Liberians Made Furniture",
+      "method": "website-domain",
+      "value": "mcarthurglen.com"
+    },
+    {
+      "no": "221",
+      "name": "Lifestyle Luxury Hotel & Residence",
+      "method": "phone",
+      "value": "+231770000220"
+    },
+    {
+      "no": "222",
+      "name": "Lila Brown",
+      "method": "exact-name",
+      "value": "lila brown"
+    },
+    {
+      "no": "227",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "228",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "229",
+      "name": "Lr & Sons",
+      "method": "exact-name",
+      "value": "lr & sons"
+    },
+    {
+      "no": "233",
+      "name": "Ma",
+      "method": "exact-name",
+      "value": "ma"
+    },
+    {
+      "no": "234",
+      "name": "Ma Maicee Fianka Foods",
+      "method": "website-domain",
+      "value": "majusandtheburgerspot.com"
+    },
+    {
+      "no": "236",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "237",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "239",
+      "name": "Mamba Point Hotel",
+      "method": "exact-name",
+      "value": "mamba point hotel"
+    },
+    {
+      "no": "240",
+      "name": "Mamba Point Rental Services",
+      "method": "website-domain",
+      "value": "mambapointhotel.com"
+    },
+    {
+      "no": "243",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "245",
+      "name": "Maryland Guest House",
+      "method": "exact-name",
+      "value": "maryland guest house"
+    },
+    {
+      "no": "246",
+      "name": "Matenneh Fashion",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "248",
+      "name": "Mega Mart",
+      "method": "exact-name",
+      "value": "mega mart"
+    },
+    {
+      "no": "252",
+      "name": "Mk First Class Wear",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "256",
+      "name": "Mohammed Samson Bah",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "257",
+      "name": "Monoprix Supermarket",
+      "method": "exact-name",
+      "value": "monoprix supermarket"
+    },
+    {
+      "no": "258",
+      "name": "Monroe Chicken",
+      "method": "exact-name",
+      "value": "monroe chicken"
+    },
+    {
+      "no": "263",
+      "name": "Murex Plaza Hotel & Suites",
+      "method": "exact-name",
+      "value": "murex plaza hotel & suites"
+    },
+    {
+      "no": "266",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "268",
+      "name": "Naresh Brothers",
+      "method": "exact-name",
+      "value": "naresh brothers"
+    },
+    {
+      "no": "269",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "274",
+      "name": "Nice Cream",
+      "method": "exact-name",
+      "value": "nice cream"
+    },
+    {
+      "no": "276",
+      "name": "Nour Boutique Store",
+      "method": "phone",
+      "value": "+231886512909"
+    },
+    {
+      "no": "280",
+      "name": "Ocean Eleven",
+      "method": "phone",
+      "value": "+231775505057"
+    },
+    {
+      "no": "281",
+      "name": "Ocean Eleven Complex Gym",
+      "method": "phone",
+      "value": "+231775505057"
+    },
+    {
+      "no": "290",
+      "name": "Ox Skylounge",
+      "method": "website-domain",
+      "value": "jmartliberia.com"
+    },
+    {
+      "no": "292",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "295",
+      "name": "Passion Restaurant & Nightclub",
+      "method": "exact-name",
+      "value": "passion restaurant & nightclub"
+    },
+    {
+      "no": "299",
+      "name": "Perfect Collection",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "302",
+      "name": "Planet Pc Liberia",
+      "method": "exact-name",
+      "value": "planet pc liberia"
+    },
+    {
+      "no": "309",
+      "name": "Purity Kids Collection",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "311",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "321",
+      "name": "Riverside Resort Villas",
+      "method": "phone",
+      "value": "+231776989898"
+    },
+    {
+      "no": "322",
+      "name": "Rlj Kendeja Resort & Villas",
+      "method": "exact-name",
+      "value": "rlj kendeja resort & villas"
+    },
+    {
+      "no": "323",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "325",
+      "name": "Royal Grand Hotel",
+      "method": "exact-name",
+      "value": "royal grand hotel"
+    },
+    {
+      "no": "326",
+      "name": "Sajj House",
+      "method": "exact-name",
+      "value": "sajj house"
+    },
+    {
+      "no": "327",
+      "name": "Sajj House Bar And Restaurant",
+      "method": "fuzzy-name",
+      "value": "\"sajj house bar and restaurant\" ~ \"sajj house\" (100%)"
+    },
+    {
+      "no": "328",
+      "name": "Saksouk Shopping Center",
+      "method": "exact-name",
+      "value": "saksouk shopping center"
+    },
+    {
+      "no": "329",
+      "name": "Sali Fatu African Collection",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "335",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "337",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "338",
+      "name": "Shooters Sports Bar & Lounge",
+      "method": "phone",
+      "value": "+231881462290"
+    },
+    {
+      "no": "342",
+      "name": "Sinkor Palace Hotel",
+      "method": "exact-name",
+      "value": "sinkor palace hotel"
+    },
+    {
+      "no": "352",
+      "name": "Style By Monsio",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "357",
+      "name": "Sunset Inn",
+      "method": "exact-name",
+      "value": "sunset inn"
+    },
+    {
+      "no": "363",
+      "name": "Terravilla Guest Cottage",
+      "method": "phone",
+      "value": "+231777519930"
+    },
+    {
+      "no": "365",
+      "name": "The Cape Hotel",
+      "method": "exact-name",
+      "value": "the cape hotel"
+    },
+    {
+      "no": "368",
+      "name": "The Eatery",
+      "method": "exact-name",
+      "value": "the eatery"
+    },
+    {
+      "no": "369",
+      "name": "The Fixers Spot",
+      "method": "website-domain",
+      "value": "ul.edu.lr"
+    },
+    {
+      "no": "370",
+      "name": "The Grill House",
+      "method": "fuzzy-name",
+      "value": "\"the grill house\" ~ \"grill house restaurant\" (100%)"
+    },
+    {
+      "no": "378",
+      "name": "The Wardrone",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "380",
+      "name": "Tiktor Bar & Restaurant",
+      "method": "phone",
+      "value": "+231770070006"
+    },
+    {
+      "no": "381",
+      "name": "Tilda Collection",
+      "method": "website-domain",
+      "value": "mambapointhotel.com"
+    },
+    {
+      "no": "384",
+      "name": "Town Bakery",
+      "method": "exact-name",
+      "value": "town bakery"
+    },
+    {
+      "no": "385",
+      "name": "Trillion Gentlemen",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "386",
+      "name": "Trillion Kids World",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    },
+    {
+      "no": "390",
+      "name": "Tropicana Beach",
+      "method": "phone",
+      "value": "+231770529639"
+    },
+    {
+      "no": "393",
+      "name": "",
+      "method": "exact-name",
+      "value": ""
+    },
+    {
+      "no": "409",
+      "name": "Wed Meliberia",
+      "method": "website-domain",
+      "value": "tipmeliberia.com"
+    },
+    {
+      "no": "410",
+      "name": "Weke Lodge",
+      "method": "website-domain",
+      "value": "libassa.com"
+    },
+    {
+      "no": "415",
+      "name": "Wulki Farm, Club House",
+      "method": "phone",
+      "value": "+231886512222"
+    },
+    {
+      "no": "416",
+      "name": "Xquisite Liberia",
+      "method": "exact-name",
+      "value": "xquisite liberia"
+    },
+    {
+      "no": "417",
+      "name": "Young Fashion Designer",
+      "method": "website-domain",
+      "value": "saksoukshoppingcenter.com"
+    }
+  ]
+}

@@ -76,7 +76,7 @@ function setItem<T>(key: string, value: T): void {
 
 // Schema version — bump this whenever new localStorage keys are added.
 // On load, migrate() backfills any missing keys so existing users aren't left blank.
-const SCHEMA_VERSION = '3'
+const SCHEMA_VERSION = '4'
 const SCHEMA_VERSION_KEY = 'leenqup_schema_version'
 
 const NEW_KEYS_V2 = [
@@ -111,10 +111,19 @@ function migrate(): void {
   // v3: Merge TrueLiberia merchants (merchantsC) into existing data without overwriting user edits.
   // Only adds merchants whose IDs don't already exist in localStorage.
   const existingMerchants = getItem<Merchant[]>(KEYS.merchants) ?? []
-  const existingIds = new Set(existingMerchants.map((m: Merchant) => m.id))
-  const toAdd = seedMerchants.filter((m: Merchant) => !existingIds.has(m.id))
-  if (toAdd.length > 0) {
-    setItem(KEYS.merchants, [...existingMerchants, ...toAdd])
+  const existingMerchantIds = new Set(existingMerchants.map((m: Merchant) => m.id))
+  const merchantsToAdd = seedMerchants.filter((m: Merchant) => !existingMerchantIds.has(m.id))
+  if (merchantsToAdd.length > 0) {
+    setItem(KEYS.merchants, [...existingMerchants, ...merchantsToAdd])
+  }
+
+  // v4: Merge new seed posts (post_031–post_050) into existing data without overwriting edits.
+  // Only adds posts whose IDs don't already exist in localStorage.
+  const existingPosts = getItem<Post[]>(KEYS.posts) ?? []
+  const existingPostIds = new Set(existingPosts.map((p: Post) => p.id))
+  const postsToAdd = seedPosts.filter((p: Post) => !existingPostIds.has(p.id))
+  if (postsToAdd.length > 0) {
+    setItem(KEYS.posts, [...existingPosts, ...postsToAdd])
   }
 
   localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION)

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Sun,
+  Moon,
   CheckCircle2,
   Circle,
   Clock,
@@ -37,6 +38,13 @@ import { cn } from '@/lib/utils'
 import type { SOP, Merchant, ProjectCard, Campaign, Post, Deal } from '@/types'
 
 // ─── Today helpers ─────────────────────────────────────────────────────────────
+
+function getTodayGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return { word: 'morning', useMoon: false }
+  if (h < 17) return { word: 'afternoon', useMoon: false }
+  return { word: 'evening', useMoon: true }
+}
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -493,11 +501,18 @@ export default function TodayPage() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-            <Sun className="h-5 w-5 text-amber-500" />
-          </div>
+          {(() => {
+            const g = getTodayGreeting()
+            return (
+              <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${g.useMoon ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                {g.useMoon
+                  ? <Moon className="h-5 w-5 text-indigo-400" />
+                  : <Sun className="h-5 w-5 text-amber-500" />}
+              </div>
+            )
+          })()}
           <div>
-            <h1 className="text-2xl font-bold text-navy dark:text-white">Good morning</h1>
+            <h1 className="text-2xl font-bold text-navy dark:text-white">Good {getTodayGreeting().word}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">{dateLabel}</p>
           </div>
         </div>

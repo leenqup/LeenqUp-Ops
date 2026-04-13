@@ -162,7 +162,7 @@ function BufferCard({ settings, onSettingsChange }: {
     const updated = { ...settings, bufferAccessToken: token }
     saveSettings(updated)
     onSettingsChange(updated)
-    toast('Buffer settings saved')
+    toast('Buffer API key saved')
     setTestStatus('idle')
     setProfiles([])
   }
@@ -175,7 +175,7 @@ function BufferCard({ settings, onSettingsChange }: {
     setTestStatus('idle')
     setTestMessage('')
     setProfiles([])
-    toast('Buffer token cleared')
+    toast('Buffer API key cleared')
   }
 
   const handleTest = async () => {
@@ -223,14 +223,14 @@ function BufferCard({ settings, onSettingsChange }: {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label>Access Token</Label>
+          <Label>API Key</Label>
           <div className="mt-1">
-            <PasswordInput value={token} onChange={setToken} placeholder="Your Buffer access token" />
+            <PasswordInput value={token} onChange={setToken} placeholder="Your Buffer API key" />
           </div>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
-            Find your Buffer access token at{' '}
+            Get your API key at{' '}
             <a href="https://buffer.com" target="_blank" rel="noopener noreferrer" className="text-coral hover:underline">buffer.com</a>
-            {' '}→ Settings → Apps &amp; API → Your Access Token
+            {' '}→ Settings → API → Create new API key
           </p>
         </div>
 

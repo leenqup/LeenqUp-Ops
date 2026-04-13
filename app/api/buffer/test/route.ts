@@ -1,37 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Buffer Publish API — uses Bearer token auth against https://api.bufferapp.com/1/.
-// Buffer no longer accepts new public developer applications but personal access tokens
-// still authenticate against this endpoint.
-// Verify current endpoints at: https://buffer.com/developers/api
+// Buffer GraphQL API — https://api.buffer.com
+// Auth: Bearer API key in Authorization header
+// All requests are POST to https://api.buffer.com with JSON body { query, variables }
+
+const BUFFER_GQL = 'https://api.buffer.com'
+
+async function gql(
+  token: string,
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<{ data?: Record<string, unknown>; errors?: Array<{ message: string }> }> {
+  const res = await fetch(BUFFER_GQL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ query, variables }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Buffer API ${res.status}: ${text.slice(0, 200)}`)
+  }
+  return res.json()
+}
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get('x-buffer-token')
   if (!token) {
-    return NextResponse.json({ success: false, error: 'Buffer access token not configured' }, { status: 401 })
+    return NextResponse.json({ success: false, error: 'Buffer API key not configured. Add it in Settings.' }, { status: 401 })
   }
 
   try {
-    const res = await fetch('https://api.bufferapp.com/1/profiles.json', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) {
-      let errMsg = 'Invalid Buffer token'
-      try { const err = await res.json(); errMsg = err.message || errMsg } catch {}
-      return NextResponse.json({ success: false, error: errMsg }, { status: res.status })
+    // Step 1 — get organization ID
+    const orgResult = await gql(token, `{ account { organizations { id } } }`)
+    if (orgResult.errors?.length) {
+      return NextResponse.json(
+        { success: false, error: orgResult.errors[0].message || 'Invalid API key' },
+        { status: 401 },
+      )
     }
-    const profiles: Array<{ id: string; service: string; formatted_username: string; default_profile: boolean }> = await res.json()
-    return NextResponse.json({
-      success: true,
-      profiles: profiles.map(p => ({
-        id: p.id,
-        service: p.service,
-        // 'name' matches what the Settings page renders in the profile list
-        name: p.formatted_username,
-        isDefault: p.default_profile,
-      })),
-    })
-  } catch {
-    return NextResponse.json({ success: false, error: 'Could not reach Buffer API' }, { status: 500 })
+
+    const organizations = (orgResult.data?.account as { organizations?: Array<{ id: string }> })?.organizations ?? []
+    const orgId = organizations[0]?.id
+    if (!orgId) {
+      return NextResponse.json({ success: false, error: 'No Buffer organization found for this API key' }, { status: 404 })
+    }
+
+    // Step 2 — list channels in the organization
+    const channelsResult = await gql(
+      token,
+      `query GetChannels($orgId: String!) {
+        channels(input: { organizationId: $orgId }) {
+          id
+          name
+          service
+        }
+      }`,
+      { orgId },
+    )
+
+    if (channelsResult.errors?.length) {
+      return NextResponse.json(
+        { success: false, error: channelsResult.errors[0].message || 'Failed to fetch channels' },
+        { status: 400 },
+      )
+    }
+
+    const rawChannels = (channelsResult.data?.channels as Array<{ id: string; name: string; service?: string }>) ?? []
+    const channels = rawChannels.map(c => ({
+      id: c.id,
+      name: c.name,
+      service: c.service ?? '',
+    }))
+
+    return NextResponse.json({ success: true, profiles: channels })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Could not reach Buffer API'
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

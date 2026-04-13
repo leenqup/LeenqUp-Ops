@@ -27,6 +27,7 @@ export interface Post {
   publishedUrl?: string
   impressions?: number
   engagements?: number
+  format?: 'thread' | 'carousel'  // Twitter threads and Instagram carousels
 }
 
 export type ScriptChannel = 'whatsapp' | 'instagram-dm' | 'facebook-messenger' | 'email' | 'sms'

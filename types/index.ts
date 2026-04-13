@@ -225,6 +225,11 @@ export interface AppSettings {
   googleSheetsId?: string           // Spreadsheet ID from the Sheets URL
   // Make.com inbound
   makeInboundSecret?: string        // Shared secret for X-LeenqUp-Secret header validation
+  // Team identity (device-local, never synced)
+  teamMemberEmail?: string
+  teamMemberName?: string
+  teamMemberRole?: TeamRole
+  teamInviteToken?: string          // Token used to validate this device's identity
 }
 
 export interface ConnectionStatus {
@@ -238,6 +243,65 @@ export interface SOPCompletion {
   date: string        // ISO date string (date only: "2026-04-10")
   completedAt: string // ISO datetime
   completedBy: string
+}
+
+// ============================================================
+// Team & Access Control
+// ============================================================
+
+export type TeamRole = 'admin' | 'editor' | 'viewer'
+export type TeamMemberStatus = 'invited' | 'active' | 'revoked'
+
+export interface TeamMember {
+  id: string
+  email: string
+  name: string
+  role: TeamRole
+  status: TeamMemberStatus
+  inviteToken: string
+  invitedAt: string
+  acceptedAt?: string
+  invitedByEmail: string
+  lastActiveAt?: string
+}
+
+// ============================================================
+// Activity Feed
+// ============================================================
+
+export type ActivityEntityType =
+  | 'post'
+  | 'merchant'
+  | 'deal'
+  | 'sop'
+  | 'campaign'
+  | 'project-card'
+  | 'script'
+  | 'sequence'
+
+export type ActivityAction =
+  | 'created'
+  | 'updated'
+  | 'deleted'
+  | 'status-changed'
+  | 'stage-changed'
+  | 'completed'
+  | 'scheduled'
+  | 'published'
+  | 'contacted'
+  | 'invited'
+  | 'joined'
+
+export interface ActivityEntry {
+  id: string
+  userEmail: string
+  userName: string
+  action: ActivityAction
+  entityType: ActivityEntityType
+  entityId: string
+  entityName: string
+  detail?: string             // e.g. "prospecting → qualified" for stage changes
+  timestamp: string           // ISO datetime
 }
 
 // ============================================================

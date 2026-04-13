@@ -5,6 +5,7 @@ import type {
   ProjectBoard, ProjectCard, Deal, CRMActivity, MerchantAccount, DiasporaLink,
   SellerProfile, PriceBenchmark, CategoryTrend, DiasporaDemandSignal,
   ExpenseEntry, RevenueEntry, CashPosition, InvestorKPIs,
+  TeamMember, ActivityEntry, ActivityAction, ActivityEntityType,
 } from '@/types'
 import { kvSet, kvSetBatch, kvGetAll } from '@/lib/supabase'
 import { posts as seedPosts } from '@/data/posts'
@@ -45,6 +46,8 @@ const KEYS = {
   revenues: 'leenqup_revenues',
   cashPositions: 'leenqup_cash_positions',
   investorKpis: 'leenqup_investor_kpis',
+  // Team & Activity (v5)
+  activityFeed: 'leenqup_activity_feed',
 }
 
 function getItem<T>(key: string): T | null {
@@ -76,7 +79,7 @@ function setItem<T>(key: string, value: T): void {
 
 // Schema version — bump this whenever new localStorage keys are added.
 // On load, migrate() backfills any missing keys so existing users aren't left blank.
-const SCHEMA_VERSION = '4'
+const SCHEMA_VERSION = '5'
 const SCHEMA_VERSION_KEY = 'leenqup_schema_version'
 
 const NEW_KEYS_V2 = [
@@ -126,6 +129,11 @@ function migrate(): void {
     setItem(KEYS.posts, [...existingPosts, ...postsToAdd])
   }
 
+  // v5: Seed activity feed key if missing (empty array — feed populates from user actions)
+  if (!localStorage.getItem(KEYS.activityFeed)) {
+    setItem(KEYS.activityFeed, [])
+  }
+
   localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION)
 }
 
@@ -156,6 +164,7 @@ export function initializeStorage(): void {
   setItem(KEYS.priceBenchmarks, [])
   setItem(KEYS.categoryTrends, [])
   setItem(KEYS.demandSignals, [])
+  setItem(KEYS.activityFeed, [])
   localStorage.setItem(KEYS.seeded, 'true')
   localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION)
 }
@@ -188,12 +197,24 @@ export function resetSection(section: keyof typeof KEYS): void {
 // Posts
 export function getPosts(): Post[] { return getItem<Post[]>(KEYS.posts) ?? [] }
 export function savePosts(posts: Post[]): void { setItem(KEYS.posts, posts) }
-export function upsertPost(post: Post): void {
+export function upsertPost(post: Post, _skipLog = false): void {
   const all = getPosts()
   const idx = all.findIndex(p => p.id === post.id)
+  const isNew = idx < 0
   if (idx >= 0) all[idx] = post
   else all.unshift(post)
   savePosts(all)
+  if (!_skipLog) {
+    const { userEmail, userName } = currentUser()
+    logActivity({
+      userEmail, userName,
+      action: isNew ? 'created' : post.status === 'scheduled' ? 'scheduled' : post.status === 'published' ? 'published' : 'updated',
+      entityType: 'post',
+      entityId: post.id,
+      entityName: post.title,
+      detail: post.status === 'scheduled' && post.scheduledFor ? `Scheduled for ${post.scheduledFor.slice(0, 10)}` : undefined,
+    })
+  }
 }
 export function deletePost(id: string): void { savePosts(getPosts().filter(p => p.id !== id)) }
 
@@ -222,12 +243,23 @@ export function upsertSequence(seq: EmailSequence): void {
 // Campaigns
 export function getCampaigns(): Campaign[] { return getItem<Campaign[]>(KEYS.campaigns) ?? [] }
 export function saveCampaigns(c: Campaign[]): void { setItem(KEYS.campaigns, c) }
-export function upsertCampaign(campaign: Campaign): void {
+export function upsertCampaign(campaign: Campaign, _skipLog = false): void {
   const all = getCampaigns()
   const idx = all.findIndex(c => c.id === campaign.id)
+  const isNew = idx < 0
   if (idx >= 0) all[idx] = campaign
   else all.unshift(campaign)
   saveCampaigns(all)
+  if (!_skipLog) {
+    const { userEmail, userName } = currentUser()
+    logActivity({
+      userEmail, userName,
+      action: isNew ? 'created' : campaign.status === 'active' ? 'published' : 'updated',
+      entityType: 'campaign',
+      entityId: campaign.id,
+      entityName: campaign.name,
+    })
+  }
 }
 
 // SOPs
@@ -249,12 +281,26 @@ export function deleteBrandResponse(id: string): void { saveBrandResponses(getBr
 // Merchants
 export function getMerchants(): Merchant[] { return getItem<Merchant[]>(KEYS.merchants) ?? [] }
 export function saveMerchants(m: Merchant[]): void { setItem(KEYS.merchants, m) }
-export function upsertMerchant(merchant: Merchant): void {
+export function upsertMerchant(merchant: Merchant, _skipLog = false): void {
   const all = getMerchants()
   const idx = all.findIndex(m => m.id === merchant.id)
+  const isNew = idx < 0
+  const prev = idx >= 0 ? all[idx] : null
   if (idx >= 0) all[idx] = merchant
   else all.unshift(merchant)
   saveMerchants(all)
+  if (!_skipLog) {
+    const { userEmail, userName } = currentUser()
+    const statusChanged = prev && prev.outreachStatus !== merchant.outreachStatus
+    logActivity({
+      userEmail, userName,
+      action: isNew ? 'created' : statusChanged ? 'status-changed' : 'updated',
+      entityType: 'merchant',
+      entityId: merchant.id,
+      entityName: merchant.name,
+      detail: statusChanged ? `${prev!.outreachStatus} → ${merchant.outreachStatus}` : undefined,
+    })
+  }
 }
 export function deleteMerchant(id: string): void { saveMerchants(getMerchants().filter(m => m.id !== id)) }
 
@@ -284,12 +330,26 @@ export function saveProjectCards(cards: ProjectCard[]): void { setItem(KEYS.card
 export function getCardsForBoard(boardId: string): ProjectCard[] {
   return getProjectCards().filter(c => c.boardId === boardId)
 }
-export function upsertProjectCard(card: ProjectCard): void {
+export function upsertProjectCard(card: ProjectCard, _skipLog = false): void {
   const all = getProjectCards()
   const idx = all.findIndex(c => c.id === card.id)
+  const isNew = idx < 0
+  const prev = idx >= 0 ? all[idx] : null
   if (idx >= 0) all[idx] = card
   else all.push(card)
   saveProjectCards(all)
+  if (!_skipLog) {
+    const { userEmail, userName } = currentUser()
+    const statusChanged = prev && prev.status !== card.status
+    logActivity({
+      userEmail, userName,
+      action: isNew ? 'created' : card.status === 'done' ? 'completed' : statusChanged ? 'status-changed' : 'updated',
+      entityType: 'project-card',
+      entityId: card.id,
+      entityName: card.title,
+      detail: statusChanged ? `${prev!.status} → ${card.status}` : undefined,
+    })
+  }
 }
 export function deleteProjectCard(id: string): void {
   saveProjectCards(getProjectCards().filter(c => c.id !== id))
@@ -298,12 +358,26 @@ export function deleteProjectCard(id: string): void {
 // ── Deals ─────────────────────────────────────────────────────
 export function getDeals(): Deal[] { return getItem<Deal[]>(KEYS.deals) ?? [] }
 export function saveDeals(deals: Deal[]): void { setItem(KEYS.deals, deals) }
-export function upsertDeal(deal: Deal): void {
+export function upsertDeal(deal: Deal, _skipLog = false): void {
   const all = getDeals()
   const idx = all.findIndex(d => d.id === deal.id)
+  const isNew = idx < 0
+  const prev = idx >= 0 ? all[idx] : null
   if (idx >= 0) all[idx] = deal
   else all.unshift(deal)
   saveDeals(all)
+  if (!_skipLog) {
+    const { userEmail, userName } = currentUser()
+    const stageChanged = prev && prev.stage !== deal.stage
+    logActivity({
+      userEmail, userName,
+      action: isNew ? 'created' : stageChanged ? 'stage-changed' : 'updated',
+      entityType: 'deal',
+      entityId: deal.id,
+      entityName: deal.title,
+      detail: stageChanged ? `${prev!.stage} → ${deal.stage}` : undefined,
+    })
+  }
 }
 export function deleteDeal(id: string): void { saveDeals(getDeals().filter(d => d.id !== id)) }
 
@@ -418,6 +492,18 @@ export function logSOPCompletion(sopId: string, completedBy: string = 'team'): v
     completedBy,
   })
   setItem(SOP_COMPLETIONS_KEY, completions)
+  // Log to activity feed
+  const sop = getSOPs().find(s => s.id === sopId)
+  if (sop) {
+    const { userEmail, userName } = currentUser()
+    logActivity({
+      userEmail, userName,
+      action: 'completed',
+      entityType: 'sop',
+      entityId: sopId,
+      entityName: sop.title,
+    })
+  }
 }
 
 export function getSOPCompletionsForDate(date: string): SOPCompletion[] {
@@ -498,6 +584,38 @@ export function upsertInvestorKpi(entry: InvestorKPIs): void {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Activity Feed
+// ──────────────────────────────────────────────────────────────
+
+const ACTIVITY_CAP = 500 // max entries kept in the feed
+
+export function getActivityFeed(): ActivityEntry[] {
+  return getItem<ActivityEntry[]>(KEYS.activityFeed) ?? []
+}
+
+export function logActivity(
+  entry: Omit<ActivityEntry, 'id' | 'timestamp'>
+): void {
+  const feed = getActivityFeed()
+  const newEntry: ActivityEntry = {
+    ...entry,
+    id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: new Date().toISOString(),
+  }
+  const trimmed = [newEntry, ...feed].slice(0, ACTIVITY_CAP)
+  setItem(KEYS.activityFeed, trimmed)
+}
+
+/** Convenience: read current user identity from settings for feed entries */
+function currentUser(): { userEmail: string; userName: string } {
+  const s = getItem<{ teamMemberEmail?: string; teamMemberName?: string }>(KEYS.settings) ?? {}
+  return {
+    userEmail: s.teamMemberEmail ?? 'team@leenqup.com',
+    userName: s.teamMemberName ?? 'Team',
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
 // Full Backup / Restore
 // ──────────────────────────────────────────────────────────────
 
@@ -509,6 +627,7 @@ const BACKUP_KEYS = [
   KEYS.sellerProfiles,
   KEYS.priceBenchmarks, KEYS.categoryTrends, KEYS.demandSignals,
   KEYS.expenses, KEYS.revenues, KEYS.cashPositions, KEYS.investorKpis,
+  KEYS.activityFeed,
   SCHEMA_VERSION_KEY,
 ] as const
 

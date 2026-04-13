@@ -22,7 +22,13 @@ import {
   Sun,
   DollarSign,
   BookOpen,
+  Activity,
+  CalendarDays,
+  BarChart3,
+  Search,
+  UserCog,
 } from 'lucide-react'
+import { useCommandPalette } from './command-palette'
 import { cn } from '@/lib/utils'
 import { getSettings } from '@/lib/storage'
 
@@ -50,6 +56,9 @@ const navSections = [
       { href: '/sops', label: 'SOPs', icon: ClipboardList },
       { href: '/brand', label: 'Brand', icon: Palette },
       { href: '/finance', label: 'Finance', icon: DollarSign },
+      { href: '/calendar', label: 'Calendar', icon: CalendarDays },
+      { href: '/reports', label: 'Reports', icon: BarChart3 },
+      { href: '/feed', label: 'Activity Feed', icon: Activity },
     ],
   },
   {
@@ -74,6 +83,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [connections, setConnections] = useState({ buffer: false, brevo: false, notion: false })
+  const { setOpen: openSearch } = useCommandPalette()
 
   useEffect(() => {
     const s = getSettings()
@@ -88,14 +98,23 @@ export function Sidebar() {
     <div className="flex flex-col h-full bg-navy-500 text-white">
       {/* Wordmark */}
       <div className="px-6 py-5 border-b border-navy-600">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-coral rounded-lg flex items-center justify-center">
-            <Zap className="h-4 w-4 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-coral rounded-lg flex items-center justify-center">
+              <Zap className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <span className="text-lg font-bold tracking-tight text-white">LeenqUp</span>
+              <span className="text-xs text-slate-300 ml-1 font-medium">Ops</span>
+            </div>
           </div>
-          <div>
-            <span className="text-lg font-bold tracking-tight text-white">LeenqUp</span>
-            <span className="text-xs text-slate-300 ml-1 font-medium">Ops</span>
-          </div>
+          <button
+            onClick={() => openSearch(true)}
+            title="Search (⌘K)"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-navy-600 rounded-lg transition-colors"
+          >
+            <Search className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -155,8 +174,21 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Settings */}
-      <div className="px-3 py-3 border-t border-navy-600">
+      {/* Settings + Team */}
+      <div className="px-3 py-3 border-t border-navy-600 space-y-0.5">
+        <Link
+          href="/team"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+            pathname === '/team'
+              ? 'bg-coral text-white'
+              : 'text-slate-200 hover:bg-navy-600 hover:text-white'
+          )}
+        >
+          <UserCog className="h-4 w-4" />
+          Team
+        </Link>
         <Link
           href="/settings"
           onClick={() => setMobileOpen(false)}

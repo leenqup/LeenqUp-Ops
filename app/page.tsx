@@ -19,6 +19,10 @@ import {
   AlertCircle,
   CheckCheck,
   Timer,
+  Activity,
+  TrendingUp,
+  ClipboardList,
+  LayoutGrid,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -36,8 +40,9 @@ import {
   isSOPCompletedToday,
   isSOPCompletedThisWeek,
   logSOPCompletion,
+  getActivityFeed,
 } from '@/lib/storage'
-import type { OutreachStatus, SOP, Merchant } from '@/types'
+import type { OutreachStatus, SOP, Merchant, ActivityEntry, ActivityEntityType } from '@/types'
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -356,6 +361,69 @@ function TodaysSOPs({ sops: initialSOPs }: { sops: SOP[] }) {
   )
 }
 
+// ── Widget 4: Recent Activity ─────────────────────────────────────────────────
+const entityIcon: Record<ActivityEntityType, React.ElementType> = {
+  'post': FileText, 'merchant': Users, 'deal': TrendingUp, 'sop': ClipboardList,
+  'campaign': Megaphone, 'project-card': LayoutGrid, 'script': MessageSquare, 'sequence': Mail,
+}
+const entityColor: Record<ActivityEntityType, string> = {
+  'post': 'text-blue-500', 'merchant': 'text-green-500', 'deal': 'text-purple-500',
+  'sop': 'text-amber-500', 'campaign': 'text-coral', 'project-card': 'text-pink-500',
+  'script': 'text-teal-500', 'sequence': 'text-indigo-500',
+}
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
+}
+function RecentActivityWidget({ entries }: { entries: ActivityEntry[] }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-coral" />
+            <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
+          </div>
+          <Link href="/feed" className="text-xs text-coral hover:underline font-medium flex items-center gap-0.5">
+            View all <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-4">
+        {entries.length === 0 ? (
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No activity yet</p>
+        ) : (
+          <div className="space-y-2">
+            {entries.map(e => {
+              const Icon = entityIcon[e.entityType]
+              return (
+                <div key={e.id} className="flex items-start gap-2.5">
+                  <div className="mt-0.5 h-6 w-6 rounded-md bg-slate-50 dark:bg-navy-600 flex items-center justify-center flex-shrink-0">
+                    <Icon className={`h-3.5 w-3.5 ${entityColor[e.entityType]}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-navy dark:text-slate-200 leading-snug">
+                      <span className="font-semibold">{e.userName}</span>{' '}
+                      <span className="text-slate-500">{e.action}</span>{' '}
+                      <span className="font-medium truncate">{e.entityName}</span>
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{timeAgo(e.timestamp)}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [counts, setCounts] = useState({
@@ -383,6 +451,7 @@ export default function DashboardPage() {
   const [readinessMetrics, setReadinessMetrics] = useState<ReadinessMetric[]>([])
   const [allMerchants, setAllMerchants] = useState<Merchant[]>([])
   const [allSOPs, setAllSOPs] = useState<SOP[]>([])
+  const [recentActivity, setRecentActivity] = useState<ActivityEntry[]>([])
 
   useEffect(() => {
     initializeStorage()
@@ -472,6 +541,7 @@ export default function DashboardPage() {
 
     setAllMerchants(merchants)
     setAllSOPs(sops)
+    setRecentActivity(getActivityFeed().slice(0, 10))
   }, [])
 
   const statCards = [
@@ -674,6 +744,9 @@ export default function DashboardPage() {
 
           {/* WIDGET 3: Today's SOPs */}
           <TodaysSOPs sops={allSOPs} />
+
+          {/* WIDGET 4: Recent Activity */}
+          <RecentActivityWidget entries={recentActivity} />
         </div>
       </div>
     </div>

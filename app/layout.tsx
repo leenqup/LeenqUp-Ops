@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/sidebar'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { SupabaseProvider } from '@/components/supabase-provider'
+import { GlobalCommandPalette } from '@/components/global-command-palette'
 
 export const metadata: Metadata = {
   title: 'LeenqUp Ops',
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </main>
             </div>
           </SupabaseProvider>
+          <GlobalCommandPalette />
           <Toaster />
         </ThemeProvider>
       </body>

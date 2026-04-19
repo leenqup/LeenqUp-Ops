@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/toaster'
-import { getCampaigns, upsertCampaign, getPosts } from '@/lib/storage'
+import { getCampaigns, upsertCampaign, getPosts, initializeStorage } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 import type { Campaign, CampaignPhase, CampaignStatus, Post } from '@/types'
 
@@ -122,7 +122,7 @@ function AddCampaignDialog({ open, onClose, onSave }: AddDialogProps) {
             <Input value={form.emails} onChange={e => setForm(f => ({ ...f, emails: e.target.value }))} placeholder="seq_001, seq_002" />
           </div>
           <div className="space-y-1.5">
-            <Label>WhatsApp Broadcast</Label>
+            <Label>Broadcast Message</Label>
             <Textarea value={form.whatsappBroadcast} onChange={e => setForm(f => ({ ...f, whatsappBroadcast: e.target.value }))} rows={4} placeholder="Write the broadcast message..." />
           </div>
           <div className="space-y-1.5">
@@ -467,10 +467,10 @@ function SlideOver({ campaign, allPosts, onClose, onEdit, onCampaignUpdate }: Sl
             </section>
           )}
 
-          {/* WhatsApp Broadcast */}
+          {/* Broadcast Message */}
           <section>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">WhatsApp Broadcast</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Broadcast Message</h3>
               {campaign.assets.whatsappBroadcast && (
                 <Button variant="ghost" size="sm" onClick={copyBroadcast}>
                   <Copy className="h-3.5 w-3.5" />
@@ -523,7 +523,7 @@ function CampaignCard({ campaign, onViewDetails, onActivate }: CampaignCardProps
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const locked = campaign.status === 'active' || campaign.status === 'complete'
   const broadcast = campaign.whatsappBroadcast ?? campaign.assets.whatsappBroadcast ?? ''
-  const hasWhatsApp = !!broadcast.trim()
+  const hasBroadcast = !!broadcast.trim()
 
   const executedCount = campaign.executedPosts?.length ?? 0
   const totalPosts = campaign.assets.posts.length
@@ -576,12 +576,12 @@ function CampaignCard({ campaign, onViewDetails, onActivate }: CampaignCardProps
             <span>Email sequences: <span className="font-medium">{campaign.assets.emails.length} linked</span></span>
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-700">
-            {hasWhatsApp
+            {hasBroadcast
               ? <CheckCircle2 className="h-4 w-4 text-brand-green shrink-0" />
               : <Circle className="h-4 w-4 text-slate-300 shrink-0" />}
             <span>
-              WhatsApp broadcast:{' '}
-              {hasWhatsApp
+              Broadcast message:{' '}
+              {hasBroadcast
                 ? <span className="font-medium text-brand-green">written ✓</span>
                 : <span className="font-medium text-slate-400">not yet written ✗</span>}
             </span>
@@ -633,6 +633,7 @@ export default function CampaignsPage() {
   const [editCampaign, setEditCampaign] = useState<Campaign | null>(null)
 
   useEffect(() => {
+    initializeStorage()
     setCampaigns(getCampaigns())
     setAllPosts(getPosts())
   }, [])

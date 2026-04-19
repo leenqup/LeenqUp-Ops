@@ -213,18 +213,18 @@ LeenqUp`,
 
   {
     id: 'scr_010',
-    title: 'Objection: "I already sell on WhatsApp, why do I need this?"',
-    body: `That's completely fair — a lot of our sellers were already doing good business on WhatsApp before they joined us.
+    title: 'Objection: "I already sell through my own channels, why do I need this?"',
+    body: `That's completely fair — a lot of our sellers were already doing good business through their own networks before joining us.
 
 Here's the difference LeenqUp makes:
 
-On WhatsApp, buyers have to trust you based on a message and a prayer. On LeenqUp, your identity is confirmed, your business details are provided, and your transaction history is visible — so new buyers who've never heard of you before will still buy from you confidently.
+Right now, buyers have to trust you based on a message and a prayer. On LeenqUp, your identity is confirmed, your business details are provided, and your transaction history is visible — so new buyers who've never heard of you before will still buy from you confidently.
 
-It also opens you up to diaspora buyers in the US. Those buyers can't ask around the neighborhood to verify you. They need to see a real profile with proof-based ratings. That's a market WhatsApp can't give you.
+It also opens you up to diaspora buyers in the US. Those buyers can't ask around the neighborhood to verify you. They need to see a real profile with proof-based ratings. That's a reach informal networks can't give you.
 
 And practically: every sale on LeenqUp generates an automatic receipt. No more chasing payment records or trying to remember who paid what.
 
-WhatsApp is great for keeping in touch with existing customers. LeenqUp is how you reach buyers you've never met. 🙏`,
+Your existing networks are great for keeping in touch with existing customers. LeenqUp is how you reach buyers you've never met. 🙏`,
     channel: 'whatsapp',
     type: 'objection-handling',
     persona: 'general-merchant',
@@ -243,7 +243,7 @@ Here's where we stand: during our launch period, we're not charging monthly list
 
 So you're not paying to list. You're not paying a monthly subscription. You pay a percentage only when you make a sale. If you don't sell, you don't pay us anything.
 
-And consider what you get: a professional business profile with your identity confirmed, access to diaspora buyers you can't reach through WhatsApp, automatic receipts that protect you from disputes, and a rating that builds your credibility over time.
+And consider what you get: a professional business profile with your identity confirmed, access to diaspora buyers you can't reach through informal channels, automatic receipts that protect you from disputes, and a rating that builds your credibility over time.
 
 The fee structure is designed so that our incentives are aligned with yours — we only earn when you earn. 🙏
 
@@ -396,7 +396,7 @@ Dear [Name / Community Organization],
 
 I hope this message finds you well. I'm reaching out on behalf of LeenqUp, a new marketplace platform connecting Liberian-owned businesses with buyers — particularly members of the Liberian diaspora in the United States.
 
-We know how much the diaspora community cares about supporting businesses back home. We also know how difficult it can be to do that in a way that's safe, reliable, and doesn't require navigating informal WhatsApp groups or hoping for the best after a money transfer.
+We know how much the diaspora community cares about supporting businesses back home. We also know how difficult it can be to do that in a way that's safe, reliable, and doesn't require navigating informal buying channels or hoping for the best after a money transfer.
 
 LeenqUp changes that. Our platform features:
 • Liberian sellers with identity confirmed profiles and business details provided
@@ -458,7 +458,7 @@ Second, every transaction generates an automatic receipt tied to both buyer and 
 
 Third, if something goes wrong, you can open a dispute through the platform. Because the transaction is fully documented — payment record, seller profile, order details — we can investigate and resolve it fairly.
 
-We don't say your money is "guaranteed." We say it's protected by proof-based records and a real seller identity. That's a stronger foundation than any WhatsApp group can offer. 🙏
+We don't say your money is "guaranteed." We say it's protected by proof-based records and a real seller identity. That's a stronger foundation than informal channels can offer. 🙏
 
 Any other questions? I'm happy to walk you through anything.`,
     channel: 'whatsapp',

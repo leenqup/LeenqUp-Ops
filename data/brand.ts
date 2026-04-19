@@ -118,7 +118,7 @@ More payment options are on the way. We're working to make sure everyone, wherev
     tags: ['buyer', 'disputes', 'fulfillment', 'support'],
     response: `We take this seriously, and we have a clear process for it.
 
-First, here's what typically prevents this from happening: every seller on LeenqUp has their identity confirmed and business details on file. They're accountable in a way that anonymous sellers on WhatsApp simply are not. And their activity record is public — so sellers who don't fulfill orders get reviews that reflect that, which affects their ability to make future sales. Accountability is built into the system.
+First, here's what typically prevents this from happening: every seller on LeenqUp has their identity confirmed and business details on file. They're accountable in a way that anonymous sellers in informal networks simply are not. And their activity record is public — so sellers who don't fulfill orders get reviews that reflect that, which affects their ability to make future sales. Accountability is built into the system.
 
 But if it does happen:
 
@@ -142,11 +142,11 @@ Your money is not gone just because a seller goes quiet. We have the records, an
 
 When you visit a seller's profile, you'll see a "Message Seller" button. Click that and you can send them a direct message through the LeenqUp platform. The seller receives a notification and can reply directly from their dashboard.
 
-This is important: we recommend communicating through LeenqUp's messaging system rather than jumping to WhatsApp or Instagram DMs — even if the seller offers their personal number. Here's why: messages sent through LeenqUp are part of your order record. If there's ever a dispute, that communication is documented and available for review.
+This is important: we recommend communicating through LeenqUp's messaging system rather than jumping to external messaging apps or Instagram DMs — even if the seller offers their personal number. Here's why: messages sent through LeenqUp are part of your order record. If there's ever a dispute, that communication is documented and available for review.
 
 Sellers with a strong activity record typically respond within a few hours. If a seller isn't responding to your messages within 24-48 hours, that's worth noting — and worth contacting us about.
 
-We designed the messaging system to keep the experience clean, accountable, and on the record. It's part of what makes LeenqUp different from buying through a WhatsApp group.`,
+We designed the messaging system to keep the experience clean, accountable, and on the record. It's part of what makes LeenqUp different from buying through an informal group.`,
     createdAt: '2026-04-10T00:00:00Z',
     updatedAt: '2026-04-10T00:00:00Z',
   },
@@ -264,7 +264,7 @@ Every seller starts with zero reviews. Here's how to build a proof-based reputat
 A complete profile with a real photo, a clear business description, and detailed product listings signals seriousness. Buyers notice empty profiles and bounce. Fill every field.
 
 **2. Invite your existing customers first.**
-The fastest way to build your activity record is to bring people who already trust you. Send your WhatsApp regulars your LeenqUp store link and ask them to place their next order through the platform. Their completed purchase creates your first transaction history, and if you ask them nicely, their review is your first proof-based social credibility.
+The fastest way to build your activity record is to bring people who already trust you. Send your regular customers your LeenqUp store link and ask them to place their next order through the platform. Their completed purchase creates your first transaction history, and if you ask them nicely, their review is your first proof-based social credibility.
 
 **3. Respond fast.**
 Your response time shows on your profile. Sellers who respond to messages within a few hours signal reliability to buyers who've never purchased from them before.
@@ -285,23 +285,23 @@ You won't be new for long. Give it 10-15 fulfilled orders and your profile will 
   // ───────────────────────────────────────────────
   {
     id: 'br_011',
-    trigger: "How is LeenqUp different from just buying on WhatsApp? I already do that.",
+    trigger: "How is LeenqUp different from what I'm already doing? I buy from sellers online already.",
     audience: 'skeptic',
     channel: 'any',
-    tags: ['skeptic', 'objection', 'whatsapp', 'differentiation'],
-    response: `That's a fair point — WhatsApp works for a lot of people, and we're not dismissing it.
+    tags: ['skeptic', 'objection', 'differentiation'],
+    response: `That's a fair point — informal buying works for a lot of people, and we're not dismissing it.
 
-But here's what WhatsApp doesn't give you:
+But here's what informal channels don't give you:
 
-**No record.** When you pay someone on WhatsApp, the transaction lives in a chat. If the seller disappears or the order doesn't arrive, you have a screenshot and a prayer. On LeenqUp, every transaction is receipt-backed and logged. There's a paper trail.
+**No record.** When you pay through an informal channel, the transaction lives in a chat. If the seller disappears or the order doesn't arrive, you have a screenshot and a prayer. On LeenqUp, every transaction is receipt-backed and logged. There's a paper trail.
 
-**No accountability.** WhatsApp sellers don't have their identity confirmed or business details on file anywhere. Anyone can create an account and start selling. On LeenqUp, sellers go through a registration process before they list a single product.
+**No accountability.** Sellers in unverified networks don't have their identity confirmed or business details on file anywhere. Anyone can set up an account and start selling. On LeenqUp, sellers go through a registration process before they list a single product.
 
-**No seller history.** On WhatsApp, you can't see how many people a seller has successfully sold to. On LeenqUp, you can see a seller's full activity record — orders fulfilled, reviews from real buyers, time on the platform.
+**No seller history.** In informal channels, you can't see how many people a seller has successfully sold to. On LeenqUp, you can see a seller's full activity record — orders fulfilled, reviews from real buyers, time on the platform.
 
-**No dispute process.** If something goes wrong on WhatsApp, there's no one to call. On LeenqUp, there's a support team and a documented transaction record.
+**No dispute process.** If something goes wrong with an informal sale, there's no one to call. On LeenqUp, there's a support team and a documented transaction record.
 
-We're not saying you need to stop using WhatsApp. We're saying that for larger purchases, new sellers, or diaspora buyers who can't physically inspect goods — LeenqUp gives you something WhatsApp can't: proof.`,
+We're not saying you need to stop buying informally. We're saying that for larger purchases, new sellers, or diaspora buyers who can't physically inspect goods — LeenqUp gives you something informal networks can't: proof.`,
     createdAt: '2026-04-10T00:00:00Z',
     updatedAt: '2026-04-10T00:00:00Z',
   },
@@ -347,7 +347,7 @@ Every transaction is receipt-backed. There is always a documented record of what
 
 Every seller's activity record is visible to buyers. You can see exactly how many orders they've fulfilled and what other buyers have said — only buyers who actually completed a purchase can leave a review.
 
-And if something goes wrong, there's a support team and a documented record to work with — not just a muted WhatsApp contact.
+And if something goes wrong, there's a support team and a documented record to work with — not just an unanswered message.
 
 We're not asking you to take our word for it. We're asking you to look at the record. And when you're ready, start with a small purchase from a seller with a strong activity record. See how it goes. We'll be right here.`,
     createdAt: '2026-04-10T00:00:00Z',
@@ -367,7 +367,7 @@ So let us explain specifically what would have been different on LeenqUp:
 
 **The transaction would have been receipt-backed.** Every purchase on LeenqUp generates a receipt that's stored in our system. Your payment isn't just a screenshot in a chat — it's a logged record that both parties can point to.
 
-**You would have had somewhere to go.** If the seller went silent, you could have contacted LeenqUp support with an order record, a receipt, and documented communication. That's a very different situation than chasing someone through WhatsApp with no recourse.
+**You would have had somewhere to go.** If the seller went silent, you could have contacted LeenqUp support with an order record, a receipt, and documented communication. That's a very different situation than chasing someone through informal channels with no recourse.
 
 **The seller's activity record would have been visible.** If the seller had a history of not fulfilling orders, other buyers' reviews would have shown it before you ever sent a payment.
 

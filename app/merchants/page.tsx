@@ -1573,7 +1573,7 @@ export default function MerchantsPage() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  // IntersectionObserver — append 50 more rows when sentinel comes into view
+  // IntersectionObserver — attach/re-attach whenever the sentinel div appears
   useEffect(() => {
     const el = loaderRef.current
     if (!el) return
@@ -1581,11 +1581,11 @@ export default function MerchantsPage() {
       (entries) => {
         if (entries[0].isIntersecting) setDisplayCount(n => n + 50)
       },
-      { threshold: 0.1 }
+      { rootMargin: '200px', threshold: 0 }
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [displayCount]) // re-run after each page load so sentinel re-attaches
 
   const categories = useMemo(
     () => Array.from(new Set(merchants.map(m => m.category).filter(Boolean))).sort(),
@@ -2560,15 +2560,25 @@ export default function MerchantsPage() {
             </tbody>
           </table>
         </div>
-        {/* Infinite scroll sentinel — IntersectionObserver appends next 50 rows */}
-        {allFiltered.length > displayCount && (
-          <div ref={loaderRef} className="py-4 text-center text-xs text-slate-400">
-            Loading more merchants…
+        {/* Pagination controls */}
+        {allFiltered.length > displayCount ? (
+          <div className="py-4 flex flex-col items-center gap-2">
+            {/* Invisible sentinel for IntersectionObserver auto-load */}
+            <div ref={loaderRef} className="h-1 w-full" />
+            <p className="text-xs text-slate-400">
+              Showing {displayCount} of {allFiltered.length} merchants
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setDisplayCount(n => n + 50)}
+            >
+              Load {Math.min(50, allFiltered.length - displayCount)} more
+            </Button>
           </div>
-        )}
-        {allFiltered.length <= displayCount && allFiltered.length > 0 && (
-          <div className="py-3 text-center text-xs text-slate-300 dark:text-navy-400">
-            All {allFiltered.length} merchants loaded
+        ) : (
+          <div ref={loaderRef} className="py-3 text-center text-xs text-slate-300 dark:text-navy-400">
+            {allFiltered.length > 0 ? `All ${allFiltered.length} merchants loaded` : ''}
           </div>
         )}
       </div>

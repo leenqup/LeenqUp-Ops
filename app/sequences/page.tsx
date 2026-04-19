@@ -118,39 +118,192 @@ function EmailTimelineCard({
   )
 }
 
-// ─── Email Detail Modal ───────────────────────────────────────────────────────
+// ─── Email Detail / Edit Modal ────────────────────────────────────────────────
 
 function EmailDetailModal({
   email,
   onClose,
+  onSave,
+  onDelete,
 }: {
   email: Email | null
   onClose: () => void
+  onSave: (updated: Email) => void
+  onDelete: (position: number) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState('')
+  const [delayDays, setDelayDays] = useState(0)
+  const [tagsStr, setTagsStr] = useState('')
+
+  useEffect(() => {
+    if (email) {
+      setSubject(email.subject)
+      setBody(email.body)
+      setDelayDays(email.delayDays)
+      setTagsStr(email.tags.join(', '))
+      setEditing(false)
+    }
+  }, [email])
+
   if (!email) return null
+
+  function handleSave() {
+    if (!subject.trim()) { toast('Subject is required', 'error'); return }
+    onSave({
+      ...email!,
+      subject: subject.trim(),
+      body: body.trim(),
+      delayDays,
+      tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
+    })
+    setEditing(false)
+  }
 
   return (
     <Dialog open={!!email} onOpenChange={v => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="pr-6">{email.subject}</DialogTitle>
+          <DialogTitle className="pr-6">
+            {editing ? 'Edit Email' : email.subject}
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            <Badge variant="secondary">Email #{email.position}</Badge>
-            <Badge variant="warning">Day {email.delayDays}</Badge>
-            {email.tags.map(tag => (
-              <Badge key={tag} variant="outline">{tag}</Badge>
-            ))}
+
+        {editing ? (
+          <div className="space-y-4 py-1">
+            <div className="space-y-1.5">
+              <Label>Subject</Label>
+              <Input value={subject} onChange={e => setSubject(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Send on Day</Label>
+                <Input type="number" min={0} value={delayDays} onChange={e => setDelayDays(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tags <span className="text-slate-400 font-normal">(comma-sep)</span></Label>
+                <Input value={tagsStr} onChange={e => setTagsStr(e.target.value)} placeholder="onboarding, welcome" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email Body</Label>
+              <textarea
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                rows={10}
+                className="w-full rounded-lg border border-gray-200 dark:border-navy-500 bg-white dark:bg-navy-700 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-coral/30 resize-y"
+              />
+            </div>
           </div>
-          <div className="rounded-lg bg-gray-50 dark:bg-navy-600 border border-gray-100 dark:border-navy-500 p-4">
-            <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
-              {email.body}
-            </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex gap-2 flex-wrap">
+              <Badge variant="secondary">Email #{email.position}</Badge>
+              <Badge variant="warning">Day {email.delayDays}</Badge>
+              {email.tags.map(tag => (
+                <Badge key={tag} variant="outline">{tag}</Badge>
+              ))}
+            </div>
+            <div className="rounded-lg bg-gray-50 dark:bg-navy-600 border border-gray-100 dark:border-navy-500 p-4">
+              <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                {email.body}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          {editing ? (
+            <>
+              <Button variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
+              <Button onClick={handleSave}>Save Changes</Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                className="text-red-500 hover:text-red-600 mr-auto"
+                onClick={() => { onDelete(email.position); onClose() }}
+              >
+                Delete
+              </Button>
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+              <Button onClick={() => setEditing(true)}>Edit</Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ─── Add Email Dialog ─────────────────────────────────────────────────────────
+
+function AddEmailDialog({
+  open,
+  nextPosition,
+  onClose,
+  onAdd,
+}: {
+  open: boolean
+  nextPosition: number
+  onClose: () => void
+  onAdd: (email: Email) => void
+}) {
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState('')
+  const [delayDays, setDelayDays] = useState(0)
+  const [tagsStr, setTagsStr] = useState('')
+
+  function handleSubmit() {
+    if (!subject.trim()) { toast('Subject is required', 'error'); return }
+    onAdd({
+      position: nextPosition,
+      subject: subject.trim(),
+      body: body.trim(),
+      delayDays,
+      tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
+    })
+    setSubject(''); setBody(''); setDelayDays(0); setTagsStr('')
+    onClose()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add Email #{nextPosition}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-1">
+          <div className="space-y-1.5">
+            <Label>Subject</Label>
+            <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Welcome to LeenqUp!" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Send on Day</Label>
+              <Input type="number" min={0} value={delayDays} onChange={e => setDelayDays(Number(e.target.value))} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tags <span className="text-slate-400 font-normal">(comma-sep)</span></Label>
+              <Input value={tagsStr} onChange={e => setTagsStr(e.target.value)} placeholder="welcome, onboarding" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Email Body</Label>
+            <textarea
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              rows={10}
+              placeholder="Write the email body here. Use [name], [email] for personalization."
+              className="w-full rounded-lg border border-gray-200 dark:border-navy-500 bg-white dark:bg-navy-700 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-coral/30 resize-y"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>Close</Button>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit}>Add Email</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -289,6 +442,9 @@ function SequenceCard({
   onEnrollClick,
   onEnrollClose,
   onStatusChange,
+  onAddEmail,
+  onUpdateEmail,
+  onDeleteEmail,
 }: {
   sequence: EmailSequence
   brevoEnabled: boolean
@@ -297,8 +453,12 @@ function SequenceCard({
   onEnrollClick: (id: string) => void
   onEnrollClose: () => void
   onStatusChange: (id: string, status: SequenceStatus) => void
+  onAddEmail: (sequenceId: string, email: Email) => void
+  onUpdateEmail: (sequenceId: string, email: Email) => void
+  onDeleteEmail: (sequenceId: string, position: number) => void
 }) {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
+  const [addEmailOpen, setAddEmailOpen] = useState(false)
 
   function handleExport() {
     const lines: string[] = [
@@ -350,8 +510,12 @@ function SequenceCard({
 
           {/* Timeline */}
           {sequence.emails.length === 0 ? (
-            <div className="flex items-center justify-center h-20 rounded-xl border border-dashed border-gray-200 dark:border-navy-500">
-              <p className="text-sm text-slate-400">No emails in this sequence yet.</p>
+            <div
+              className="flex flex-col items-center justify-center h-24 rounded-xl border border-dashed border-gray-200 dark:border-navy-500 gap-2 cursor-pointer hover:border-coral/50 hover:bg-coral/5 transition-colors"
+              onClick={() => setAddEmailOpen(true)}
+            >
+              <p className="text-sm text-slate-400">No emails yet</p>
+              <p className="text-xs text-coral font-medium">+ Add First Email</p>
             </div>
           ) : (
             <div className="overflow-x-auto pb-1">
@@ -409,6 +573,11 @@ function SequenceCard({
               </Select>
             </div>
 
+            <Button size="sm" variant="secondary" onClick={() => setAddEmailOpen(true)}>
+              <Plus className="h-3 w-3" />
+              Add Email
+            </Button>
+
             <Button size="sm" variant="secondary" onClick={handleExport}>
               <Download className="h-3 w-3" />
               Export
@@ -430,8 +599,21 @@ function SequenceCard({
         </CardContent>
       </Card>
 
-      {/* Email detail modal */}
-      <EmailDetailModal email={selectedEmail} onClose={() => setSelectedEmail(null)} />
+      {/* Email detail / edit modal */}
+      <EmailDetailModal
+        email={selectedEmail}
+        onClose={() => setSelectedEmail(null)}
+        onSave={updated => { onUpdateEmail(sequence.id, updated); setSelectedEmail(null) }}
+        onDelete={pos => { onDeleteEmail(sequence.id, pos); setSelectedEmail(null) }}
+      />
+
+      {/* Add email dialog */}
+      <AddEmailDialog
+        open={addEmailOpen}
+        nextPosition={sequence.emails.length + 1}
+        onClose={() => setAddEmailOpen(false)}
+        onAdd={email => { onAddEmail(sequence.id, email); setAddEmailOpen(false) }}
+      />
     </>
   )
 }
@@ -551,6 +733,49 @@ export default function SequencesPage() {
     toast(`Sequence set to ${formatLabel(status)}.`)
   }
 
+  function handleAddEmail(sequenceId: string, email: Email) {
+    const seq = sequences.find(s => s.id === sequenceId)
+    if (!seq) return
+    const updated: EmailSequence = {
+      ...seq,
+      emails: [...seq.emails, email],
+      updatedAt: new Date().toISOString(),
+    }
+    upsertSequence(updated)
+    setSequences(getSequences())
+    toast(`Email #${email.position} added to "${seq.name}"`)
+  }
+
+  function handleUpdateEmail(sequenceId: string, email: Email) {
+    const seq = sequences.find(s => s.id === sequenceId)
+    if (!seq) return
+    const updated: EmailSequence = {
+      ...seq,
+      emails: seq.emails.map(e => e.position === email.position ? email : e),
+      updatedAt: new Date().toISOString(),
+    }
+    upsertSequence(updated)
+    setSequences(getSequences())
+    toast('Email updated')
+  }
+
+  function handleDeleteEmail(sequenceId: string, position: number) {
+    const seq = sequences.find(s => s.id === sequenceId)
+    if (!seq) return
+    // Remove email, then resequence positions
+    const remaining = seq.emails
+      .filter(e => e.position !== position)
+      .map((e, i) => ({ ...e, position: i + 1 }))
+    const updated: EmailSequence = {
+      ...seq,
+      emails: remaining,
+      updatedAt: new Date().toISOString(),
+    }
+    upsertSequence(updated)
+    setSequences(getSequences())
+    toast('Email removed')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-navy-700">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
@@ -594,6 +819,9 @@ export default function SequencesPage() {
                 onEnrollClick={id => setEnrollingId(id)}
                 onEnrollClose={() => setEnrollingId(null)}
                 onStatusChange={handleStatusChange}
+                onAddEmail={handleAddEmail}
+                onUpdateEmail={handleUpdateEmail}
+                onDeleteEmail={handleDeleteEmail}
               />
             ))}
           </div>

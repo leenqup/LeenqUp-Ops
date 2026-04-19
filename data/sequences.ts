@@ -159,7 +159,7 @@ First: you're not alone in this. LeenqUp is a community — buyers, sellers, and
 
 *The LeenqUp Community Group* — Join our Facebook group where buyers share recommendations, sellers announce new products, and the team shares updates. It's the liveliest corner of the platform.
 
-*WhatsApp Broadcast* — Follow our WhatsApp channel for quick announcements, deals, and new seller spotlights. No spam — just the good stuff.
+*Broadcast Messages* — Follow our channel for quick announcements, deals, and new seller spotlights. No spam — just the good stuff.
 
 *Direct Support* — If something goes wrong with an order, if a seller isn't responding, or if you just have a question about how something works — reach us directly. Reply to any of these emails, DM us on Instagram, or use the support button in the app. A real person answers.
 
@@ -373,7 +373,7 @@ You're ready. Go make that first sale.
         tags: ['growth', 'referrals', 'customers', 'seller'],
         body: `Hi [First Name],
 
-You already have customers. People who have bought from you on WhatsApp, at the market, through Instagram. They already trust you. Now it's time to bring them onto a platform where that trust is on the record — for them and for new buyers who don't know you yet.
+You already have customers. People who have bought from you through informal channels, at the market, through Instagram. They already trust you. Now it's time to bring them onto a platform where that trust is on the record — for them and for new buyers who don't know you yet.
 
 **Why bring your existing customers to LeenqUp?**
 
@@ -381,14 +381,14 @@ When your regulars buy from you on LeenqUp, every transaction builds your activi
 
 **How to invite them:**
 
-*WhatsApp message (to existing customers):*
+*Message to existing customers:*
 "Hey [Name]! I just set up my store on LeenqUp — it's a new platform where you can browse and order from me anytime, pay easily, and track your order. It's free for you and makes things much easier for both of us. Here's my store link: [your LeenqUp link]. Would love for you to check it out and place your next order through there!"
 
 *Instagram story:*
 "I'm now on @LeenqUp! If you've bought from me before, come find my store there — easier ordering, easy payments, and your order history is always saved. Link in bio."
 
 *Facebook post:*
-"Big news — my shop is now on LeenqUp! If you've been buying from me through WhatsApp or DMs, this makes everything cleaner: you browse, you order, you pay — all in one place. Come find me: [link]"
+"Big news — my shop is now on LeenqUp! If you've been buying from me through informal chats or DMs, this makes everything cleaner: you browse, you order, you pay — all in one place. Come find me: [link]"
 
 **Make it an event:**
 Tell your first 10 LeenqUp customers they'll get a small bonus — a discount, a free add-on, priority on a new product drop. Early loyalty deserves recognition.
@@ -527,7 +527,7 @@ We wanted to make your return worth something concrete. So here's what we're off
 Your next order on LeenqUp comes with free delivery (for Monrovia orders) or a [X]% discount off your first new order. Use code **WELCOME-BACK** at checkout. Valid for the next 14 days.
 
 **For sellers coming back:**
-We want to give your store a boost. Log back in this week and we'll feature your store in our next community post and WhatsApp broadcast — putting your business in front of buyers who are ready to shop. No cost to you. Just come back.
+We want to give your store a boost. Log back in this week and we'll feature your store in our next community post and broadcast — putting your business in front of buyers who are ready to shop. No cost to you. Just come back.
 
 **And a seller we think you should meet:**
 [Featured Seller Name] runs a Liberian food and provision business based in Monrovia, serving both local and diaspora buyers. They have a strong activity record, receipt-backed reviews from happy customers, and a business profile on file. Their palm butter and dried goods ship fast. If you haven't tried them yet — this might be your sign.

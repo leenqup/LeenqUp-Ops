@@ -7,7 +7,7 @@ import type {
   ExpenseEntry, RevenueEntry, CashPosition, InvestorKPIs,
   TeamMember, ActivityEntry, ActivityAction, ActivityEntityType,
 } from '@/types'
-import { kvSet, kvSetBatch, kvGetAll } from '@/lib/supabase'
+import { kvSet, kvSetBatch, kvGetAll, upsertMerchantDB, deleteMerchantDB } from '@/lib/supabase'
 import { posts as seedPosts } from '@/data/posts'
 import { scripts as seedScripts } from '@/data/scripts'
 import { sequences as seedSequences } from '@/data/sequences'
@@ -289,6 +289,8 @@ export function upsertMerchant(merchant: Merchant, _skipLog = false): void {
   if (idx >= 0) all[idx] = merchant
   else all.unshift(merchant)
   saveMerchants(all)
+  // Dual-write to Supabase merchants table (fire-and-forget)
+  upsertMerchantDB(merchant).catch(() => {})
   if (!_skipLog) {
     const { userEmail, userName } = currentUser()
     const statusChanged = prev && prev.outreachStatus !== merchant.outreachStatus
@@ -302,7 +304,11 @@ export function upsertMerchant(merchant: Merchant, _skipLog = false): void {
     })
   }
 }
-export function deleteMerchant(id: string): void { saveMerchants(getMerchants().filter(m => m.id !== id)) }
+export function deleteMerchant(id: string): void {
+  saveMerchants(getMerchants().filter(m => m.id !== id))
+  // Also remove from Supabase merchants table (fire-and-forget)
+  deleteMerchantDB(id).catch(() => {})
+}
 
 // Settings
 export function getSettings(): AppSettings { return getItem<AppSettings>(KEYS.settings) ?? {} }

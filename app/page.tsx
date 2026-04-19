@@ -494,48 +494,50 @@ export default function DashboardPage() {
     const sopsCount = sops.length
     const brandRespCount = brandResponses.length
 
+    // Launch readiness targets — edit these to match your current goals
+    const TARGETS = { sellers: 30, posts: 20, sequences: 3, campaigns: 3, sops: 5, brandResponses: 20 }
     setReadinessMetrics([
       {
         icon: Users,
         label: 'Sellers recruited',
         current: sellersCount,
-        target: 30,
-        display: `${sellersCount}/30 sellers`,
+        target: TARGETS.sellers,
+        display: `${sellersCount} / ${TARGETS.sellers} target`,
       },
       {
         icon: FileText,
         label: 'Posts ready',
         current: postsReadyCount,
-        target: 20,
-        display: `${postsReadyCount}/20 posts ready`,
+        target: TARGETS.posts,
+        display: `${postsReadyCount} / ${TARGETS.posts} target`,
       },
       {
         icon: Mail,
         label: 'Email sequences live',
         current: seqReadyCount,
-        target: 3,
-        display: `${seqReadyCount}/3 sequences ready`,
+        target: TARGETS.sequences,
+        display: `${seqReadyCount} / ${TARGETS.sequences} target`,
       },
       {
         icon: Megaphone,
         label: 'Campaign bundles ready',
         current: campReadyCount,
-        target: 3,
-        display: `${campReadyCount}/3 campaigns`,
+        target: TARGETS.campaigns,
+        display: `${campReadyCount} / ${TARGETS.campaigns} target`,
       },
       {
         icon: BookOpen,
         label: 'SOPs documented',
         current: sopsCount,
-        target: 5,
-        display: `${sopsCount}/5 SOPs`,
+        target: TARGETS.sops,
+        display: `${sopsCount} / ${TARGETS.sops} target`,
       },
       {
         icon: MessageCircle,
         label: 'Brand responses ready',
         current: brandRespCount,
-        target: 20,
-        display: `${brandRespCount}/20 responses`,
+        target: TARGETS.brandResponses,
+        display: `${brandRespCount} / ${TARGETS.brandResponses} target`,
       },
     ])
 

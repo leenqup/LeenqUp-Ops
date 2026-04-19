@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Papa from 'papaparse'
 import {
@@ -81,6 +81,7 @@ import {
   deleteDemandSignal,
   initializeStorage,
 } from '@/lib/storage'
+import { supabase, mapMerchantRow } from '@/lib/supabase'
 import { generateId, cn, formatDate } from '@/lib/utils'
 import type {
   Merchant,
@@ -103,7 +104,7 @@ import type {
 
 // ─── Types & Helpers ──────────────────────────────────────────────────────────
 
-type SortKey = keyof Pick<Merchant, 'name' | 'segment' | 'category' | 'city' | 'digitalPresence' | 'outreachStatus' | 'priority' | 'lastContactDate'>
+type SortKey = keyof Pick<Merchant, 'name' | 'segment' | 'category' | 'city' | 'country' | 'digitalPresence' | 'outreachStatus' | 'priority' | 'lastContactDate'>
 type SortDir = 'asc' | 'desc'
 
 const OUTREACH_STATUSES: OutreachStatus[] = ['not-contacted', 'contacted', 'responded', 'interested', 'signed-up', 'declined', 'not-a-fit']
@@ -1269,21 +1270,14 @@ interface BulkOutreachProps {
 }
 
 function BulkOutreachTool({ merchants, scripts, onClose }: BulkOutreachProps) {
-  const [filterStatus, setFilterStatus] = useState('not-contacted')
-  const [filterSegment, setFilterSegment] = useState('all')
-  const [filterTier, setFilterTier] = useState('all')
   const [selectedScriptId, setSelectedScriptId] = useState<string>(scripts[0]?.id ?? '')
   const [generated, setGenerated] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const waScripts = scripts.filter(s => s.channel === 'whatsapp')
 
-  const filtered = merchants.filter(m => {
-    if (filterStatus !== 'all' && m.outreachStatus !== filterStatus) return false
-    if (filterSegment !== 'all' && m.segment !== filterSegment) return false
-    if (filterTier !== 'all' && String(m.tier) !== filterTier) return false
-    return !!(m.whatsapp || m.phone) // only merchants we can WhatsApp
-  })
+  // Use the pre-filtered merchant list from the main page — only include those with phone/WA
+  const filtered = merchants.filter(m => !!(m.whatsapp || m.phone))
 
   const selectedScript = scripts.find(s => s.id === selectedScriptId)
 
@@ -1376,49 +1370,17 @@ function BulkOutreachTool({ merchants, scripts, onClose }: BulkOutreachProps) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-navy-500">
           <div>
             <h2 className="text-lg font-bold text-navy dark:text-white">Bulk WhatsApp Outreach</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Filter merchants → pick a script → open in WhatsApp or export</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Using your active page filters · {merchants.length} merchant{merchants.length !== 1 ? 's' : ''} in scope
+            </p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-navy-500 transition-colors">
             <X className="h-5 w-5 text-slate-500" />
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Script Picker */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-navy-500 space-y-3">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filter Merchants</p>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Outreach Status</label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {OUTREACH_STATUSES.map(s => <SelectItem key={s} value={s}>{labelOf(s)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Segment</label>
-              <Select value={filterSegment} onValueChange={setFilterSegment}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Segments</SelectItem>
-                  {SEGMENTS.map(s => <SelectItem key={s} value={s}>{labelOf(s)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-slate-500 mb-1 block">Tier</label>
-              <Select value={filterTier} onValueChange={setFilterTier}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tiers</SelectItem>
-                  {TIERS.map(t => <SelectItem key={t} value={String(t)}>Tier {t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div>
             <label className="text-xs text-slate-500 mb-1 block">WhatsApp Script Template</label>
             <Select value={selectedScriptId} onValueChange={setSelectedScriptId}>
@@ -1459,7 +1421,7 @@ function BulkOutreachTool({ merchants, scripts, onClose }: BulkOutreachProps) {
         <div className="flex-1 overflow-y-auto px-6 py-3">
           {filtered.length === 0 ? (
             <div className="text-center py-12 text-sm text-slate-400 italic">
-              No merchants match these filters with a phone/WhatsApp number.
+              None of the currently filtered merchants have a phone or WhatsApp number. Adjust your page filters to include merchants with contact info.
             </div>
           ) : (
             <div className="space-y-2">
@@ -1523,7 +1485,12 @@ export default function MerchantsPage() {
   const [filterShipsToLiberia, setFilterShipsToLiberia] = useState('all')
   const [filterCounty, setFilterCounty] = useState('all')
   const [filterSource, setFilterSource] = useState('all')
+  const [filterCountry, setFilterCountry] = useState('all')
+  const [filterContactMethod, setFilterContactMethod] = useState('all')
   const [viewMode, setViewMode] = useState<'table' | 'tier'>('table')
+  // Virtual pagination — how many filtered rows to display (load more on scroll)
+  const [displayCount, setDisplayCount] = useState(50)
+  const loaderRef = useRef<HTMLDivElement>(null)
   const [mainTab, setMainTab] = useState<'directory' | 'intel' | 'demand'>('directory')
 
   // Market Intelligence state
@@ -1572,37 +1539,112 @@ export default function MerchantsPage() {
     setBenchmarks(getPriceBenchmarks())
     setTrends(getCategoryTrends())
     setDemandSignals(getDemandSignals())
+
+    // Supabase Realtime — reflect changes made by other team members instantly
+    const channel = supabase
+      .channel('merchants-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'merchants' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setMerchants(prev => {
+              const exists = prev.some(m => m.id === (payload.new as { id: string }).id)
+              if (exists) return prev
+              return [mapMerchantRow(payload.new as Record<string, unknown>), ...prev]
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            setMerchants(prev =>
+              prev.map(m =>
+                m.id === (payload.new as { id: string }).id
+                  ? mapMerchantRow(payload.new as Record<string, unknown>)
+                  : m
+              )
+            )
+          } else if (payload.eventType === 'DELETE') {
+            setMerchants(prev =>
+              prev.filter(m => m.id !== (payload.old as { id: string }).id)
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
-  const categories = Array.from(new Set(merchants.map(m => m.category).filter(Boolean))).sort()
-  const counties = Array.from(new Set(merchants.map(m => m.county).filter(Boolean))).sort() as string[]
+  // IntersectionObserver — append 50 more rows when sentinel comes into view
+  useEffect(() => {
+    const el = loaderRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setDisplayCount(n => n + 50)
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
-  const filtered = merchants
-    .filter(m => {
-      if (search) {
-        const q = search.toLowerCase()
-        if (!m.name.toLowerCase().includes(q) && !m.city.toLowerCase().includes(q) && !m.category.toLowerCase().includes(q)) return false
-      }
-      if (filterSegment !== 'all' && m.segment !== filterSegment) return false
-      if (filterCategory !== 'all' && m.category !== filterCategory) return false
-      if (filterStatus !== 'all' && m.outreachStatus !== filterStatus) return false
-      if (filterPriority !== 'all' && m.priority !== filterPriority) return false
-      if (filterDigital !== 'all' && m.digitalPresence !== filterDigital) return false
-      if (filterTier !== 'all' && String(m.tier) !== filterTier) return false
-      if (filterLibdelivery === 'yes' && !m.isLibdeliveryPartner) return false
-      if (filterLibdelivery === 'no' && m.isLibdeliveryPartner) return false
-      if (filterShipsToLiberia === 'yes' && !m.shipsToLiberia) return false
-      if (filterShipsToLiberia === 'no' && m.shipsToLiberia) return false
-      if (filterCounty !== 'all' && m.county !== filterCounty) return false
-      if (filterSource === 'trueliberia' && !m.tags?.includes('trueliberia-import')) return false
-      if (filterSource === 'research' && m.tags?.includes('trueliberia-import')) return false
-      return true
-    })
-    .sort((a, b) => {
-      const av = (a[sortKey] ?? '') as string
-      const bv = (b[sortKey] ?? '') as string
-      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
-    })
+  const categories = useMemo(
+    () => Array.from(new Set(merchants.map(m => m.category).filter(Boolean))).sort(),
+    [merchants]
+  )
+  const counties = useMemo(
+    () => Array.from(new Set(merchants.map(m => m.county).filter(Boolean))).sort() as string[],
+    [merchants]
+  )
+  const countries = useMemo(
+    () => Array.from(new Set(merchants.map(m => m.country).filter(Boolean))).sort() as string[],
+    [merchants]
+  )
+
+  const allFiltered = useMemo(() =>
+    merchants
+      .filter(m => {
+        if (search) {
+          const q = search.toLowerCase()
+          if (!m.name.toLowerCase().includes(q) && !m.city?.toLowerCase().includes(q) && !m.category?.toLowerCase().includes(q)) return false
+        }
+        if (filterSegment !== 'all' && m.segment !== filterSegment) return false
+        if (filterCategory !== 'all' && m.category !== filterCategory) return false
+        if (filterStatus !== 'all' && m.outreachStatus !== filterStatus) return false
+        if (filterPriority !== 'all' && m.priority !== filterPriority) return false
+        if (filterDigital !== 'all' && m.digitalPresence !== filterDigital) return false
+        if (filterTier !== 'all' && String(m.tier) !== filterTier) return false
+        if (filterLibdelivery === 'yes' && !m.isLibdeliveryPartner) return false
+        if (filterLibdelivery === 'no' && m.isLibdeliveryPartner) return false
+        if (filterShipsToLiberia === 'yes' && !m.shipsToLiberia) return false
+        if (filterShipsToLiberia === 'no' && m.shipsToLiberia) return false
+        if (filterCounty !== 'all' && m.county !== filterCounty) return false
+        if (filterCountry !== 'all' && m.country !== filterCountry) return false
+        if (filterSource === 'trueliberia' && !m.tags?.includes('trueliberia-import')) return false
+        if (filterSource === 'research' && m.tags?.includes('trueliberia-import')) return false
+        if (filterContactMethod === 'has_email' && !m.email) return false
+        if (filterContactMethod === 'has_phone' && !m.phone) return false
+        if (filterContactMethod === 'has_whatsapp' && !m.whatsapp) return false
+        return true
+      })
+      .sort((a, b) => {
+        const av = (a[sortKey] ?? '') as string
+        const bv = (b[sortKey] ?? '') as string
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av)
+      }),
+    [merchants, search, filterSegment, filterCategory, filterStatus, filterPriority, filterDigital,
+      filterTier, filterLibdelivery, filterShipsToLiberia, filterCounty, filterCountry, filterSource,
+      filterContactMethod, sortKey, sortDir]
+  )
+
+  // Paginated slice — what's actually rendered in the table
+  const filtered = useMemo(() => allFiltered.slice(0, displayCount), [allFiltered, displayCount])
+
+  // Reset pagination when filters change
+  useEffect(() => { setDisplayCount(50) }, [
+    search, filterSegment, filterCategory, filterStatus, filterPriority, filterDigital,
+    filterTier, filterLibdelivery, filterShipsToLiberia, filterCounty, filterCountry,
+    filterSource, filterContactMethod, sortKey, sortDir,
+  ])
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -1679,6 +1721,25 @@ export default function MerchantsPage() {
     setFilterShipsToLiberia('all')
     setFilterCounty('all')
     setFilterSource('all')
+    setFilterCountry('all')
+    setFilterContactMethod('all')
+  }
+
+  // WhatsApp CSV export — downloads name + phone for the currently filtered list
+  const handleWhatsAppCSV = () => {
+    const rows = allFiltered
+      .filter(m => m.phone || m.whatsapp)
+      .map(m => ({ name: m.name, phone: m.whatsapp || m.phone || '' }))
+    if (rows.length === 0) { toast('No merchants with phone/WhatsApp in current filter'); return }
+    const csv = Papa.unparse(rows)
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `whatsapp-contacts-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast(`Exported ${rows.length} WhatsApp contacts`)
   }
 
   const SortIcon = ({ col }: { col: SortKey }) => {
@@ -1759,10 +1820,19 @@ export default function MerchantsPage() {
         <div>
           <h1 className="text-2xl font-bold text-navy dark:text-white">Merchants</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {merchants.length} total · {filtered.length} shown
+            {merchants.length} total · {allFiltered.length} matching
+            {allFiltered.length > displayCount && ` · ${displayCount} shown`}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {allFiltered.some(m => m.phone || m.whatsapp) && (
+            <Button variant="secondary" onClick={handleWhatsAppCSV} className="gap-1.5">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current text-[#25D366]">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967c-.273-.099-.471-.148-.67.15c-.197.297-.767.966-.94 1.164c-.173.199-.347.223-.644.075c-.297-.15-1.255-.463-2.39-1.475c-.883-.788-1.48-1.761-1.653-2.059c-.173-.297-.018-.458.13-.606c.134-.133.298-.347.446-.52c.149-.174.198-.298.298-.497c.099-.198.05-.371-.025-.52c-.075-.149-.669-1.612-.916-2.207c-.242-.579-.487-.5-.669-.51c-.173-.008-.371-.01-.57-.01c-.198 0-.52.074-.792.372c-.272.297-1.04 1.016-1.04 2.479c0 1.462 1.065 2.875 1.213 3.074c.149.198 2.096 3.2 5.077 4.487c.709.306 1.262.489 1.694.625c.712.227 1.36.195 1.871.118c.571-.085 1.758-.719 2.006-1.413c.248-.694.248-1.289.173-1.413c-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214l-3.741.982l.998-3.648l-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884c2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              WhatsApp CSV
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => setShowBulkOutreach(true)}
@@ -2213,11 +2283,24 @@ export default function MerchantsPage() {
               </Select>
             </div>
 
+            {/* Country filter — top-level regional sort */}
+            {countries.length > 1 && (
+              <div className="w-[150px]">
+                <Select value={filterCountry} onValueChange={setFilterCountry}>
+                  <SelectTrigger><SelectValue placeholder="Country" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Countries</SelectItem>
+                    {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="w-[150px]">
               <Select value={filterLibdelivery} onValueChange={setFilterLibdelivery}>
                 <SelectTrigger><SelectValue placeholder="LIBdelivery" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="all">All LIBdelivery</SelectItem>
                   <SelectItem value="yes">LIBdelivery Partners</SelectItem>
                   <SelectItem value="no">Not on LIBdelivery</SelectItem>
                 </SelectContent>
@@ -2228,7 +2311,7 @@ export default function MerchantsPage() {
               <Select value={filterShipsToLiberia} onValueChange={setFilterShipsToLiberia}>
                 <SelectTrigger><SelectValue placeholder="Ships to LR" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="all">All Shipping</SelectItem>
                   <SelectItem value="yes">Ships to Liberia</SelectItem>
                   <SelectItem value="no">Does Not Ship</SelectItem>
                 </SelectContent>
@@ -2258,6 +2341,19 @@ export default function MerchantsPage() {
               </Select>
             </div>
 
+            {/* Contact Method boolean filter */}
+            <div className="w-[160px]">
+              <Select value={filterContactMethod} onValueChange={setFilterContactMethod}>
+                <SelectTrigger><SelectValue placeholder="Contact" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Contact</SelectItem>
+                  <SelectItem value="has_email">Has Email</SelectItem>
+                  <SelectItem value="has_phone">Has Phone</SelectItem>
+                  <SelectItem value="has_whatsapp">Has WhatsApp</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
               <X className="h-4 w-4" /> Clear
             </Button>
@@ -2273,7 +2369,10 @@ export default function MerchantsPage() {
 
       {/* View Mode Toggle */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs text-slate-500 dark:text-slate-400">{filtered.length} merchant{filtered.length !== 1 ? 's' : ''} shown</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {allFiltered.length} merchant{allFiltered.length !== 1 ? 's' : ''} matching
+          {allFiltered.length > displayCount && ` · showing first ${displayCount}`}
+        </p>
         <div className="flex gap-1 bg-gray-100 dark:bg-navy-500 p-0.5 rounded-lg">
           <button
             onClick={() => setViewMode('table')}
@@ -2317,6 +2416,7 @@ export default function MerchantsPage() {
                     { key: 'segment', label: 'Segment' },
                     { key: 'category', label: 'Category' },
                     { key: 'city', label: 'City' },
+                    { key: 'country', label: 'Country' },
                     { key: 'digitalPresence', label: 'Digital' },
                     { key: 'outreachStatus', label: 'Status' },
                     { key: 'priority', label: 'Priority' },
@@ -2344,7 +2444,7 @@ export default function MerchantsPage() {
             <tbody className="divide-y divide-gray-50 dark:divide-navy-500">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-slate-400">
+                  <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">
                     No merchants match your filters.
                   </td>
                 </tr>
@@ -2363,7 +2463,24 @@ export default function MerchantsPage() {
                   >
                     <td className="px-4 py-3">
                       <div className="font-medium text-navy dark:text-white">{m.name}</div>
-                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      {/* Contact availability icons */}
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span aria-label={m.email ? `Email: ${m.email}` : 'No email'}>
+                          <Mail className={cn('h-3 w-3', m.email ? 'text-brand-purple' : 'text-slate-300 dark:text-navy-400')} />
+                        </span>
+                        <span aria-label={m.phone ? `Phone: ${m.phone}` : 'No phone'}>
+                          <Phone className={cn('h-3 w-3', m.phone ? 'text-brand-green' : 'text-slate-300 dark:text-navy-400')} />
+                        </span>
+                        <span aria-label={m.whatsapp ? `WhatsApp: ${m.whatsapp}` : 'No WhatsApp'}>
+                        <svg
+                          viewBox="0 0 24 24"
+                          className={cn('h-3 w-3 fill-current', m.whatsapp ? 'text-[#25D366]' : 'text-slate-300 dark:text-navy-400')}
+                        >
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967c-.273-.099-.471-.148-.67.15c-.197.297-.767.966-.94 1.164c-.173.199-.347.223-.644.075c-.297-.15-1.255-.463-2.39-1.475c-.883-.788-1.48-1.761-1.653-2.059c-.173-.297-.018-.458.13-.606c.134-.133.298-.347.446-.52c.149-.174.198-.298.298-.497c.099-.198.05-.371-.025-.52c-.075-.149-.669-1.612-.916-2.207c-.242-.579-.487-.5-.669-.51c-.173-.008-.371-.01-.57-.01c-.198 0-.52.074-.792.372c-.272.297-1.04 1.016-1.04 2.479c0 1.462 1.065 2.875 1.213 3.074c.149.198 2.096 3.2 5.077 4.487c.709.306 1.262.489 1.694.625c.712.227 1.36.195 1.871.118c.571-.085 1.758-.719 2.006-1.413c.248-.694.248-1.289.173-1.413c-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214l-3.741.982l.998-3.648l-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884c2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
                         {m.tier != null && (
                           <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full border', TIER_COLORS[m.tier])}>
                             T{m.tier}
@@ -2387,6 +2504,7 @@ export default function MerchantsPage() {
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{labelOf(m.segment)}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.category}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.city}</td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">{m.country || '—'}</td>
                     <td className="px-4 py-3">
                       <Badge variant={digitalPresenceVariant(m.digitalPresence)}>{labelOf(m.digitalPresence)}</Badge>
                     </td>
@@ -2442,6 +2560,17 @@ export default function MerchantsPage() {
             </tbody>
           </table>
         </div>
+        {/* Infinite scroll sentinel — IntersectionObserver appends next 50 rows */}
+        {allFiltered.length > displayCount && (
+          <div ref={loaderRef} className="py-4 text-center text-xs text-slate-400">
+            Loading more merchants…
+          </div>
+        )}
+        {allFiltered.length <= displayCount && allFiltered.length > 0 && (
+          <div className="py-3 text-center text-xs text-slate-300 dark:text-navy-400">
+            All {allFiltered.length} merchants loaded
+          </div>
+        )}
       </div>
 
       {/* Mobile Cards */}
@@ -2512,10 +2641,10 @@ export default function MerchantsPage() {
       />
       </>)}
 
-      {/* Bulk Outreach Tool */}
+      {/* Bulk Outreach Tool — receives the currently filtered merchant list */}
       {showBulkOutreach && (
         <BulkOutreachTool
-          merchants={merchants}
+          merchants={allFiltered}
           scripts={scripts}
           onClose={() => setShowBulkOutreach(false)}
         />

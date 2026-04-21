@@ -492,4 +492,81 @@ I'm sending the link right now. Let me know if anything is unclear — I'm with 
     createdAt: '2026-03-28T10:00:00Z',
     updatedAt: '2026-03-29T09:00:00Z',
   },
+
+  // ── FOUNDING MERCHANT OUTREACH ──────────────────────────────
+
+  {
+    id: 'scr_016',
+    title: 'Cold email — founding merchant invite, short version',
+    body: `Subject: Your business deserves to be found — LeenqUp founding merchant invite
+
+Good morning [Name],
+
+I came across [Business Name] and I think what you've built is exactly what LeenqUp was made for.
+
+We're launching a proof-based marketplace for Liberian sellers — and before we open to the public, we're inviting a small founding cohort. Founding merchants get a free digital storefront (no monthly fee), an identity confirmed profile that builds buyer trust before you've ever spoken, priority listing at launch, and immediate visibility to diaspora buyers in the US who are actively looking for Liberian businesses. No setup cost. A small commission only when you make a sale.
+
+If you're open to learning more, I'd love to tell you about it — or you can apply directly at LeenqUp.com. The founding cohort is small by design and spots are closing soon. We'd genuinely love to have [Business Name] in it.
+
+Warm regards,
+[Rep Name]
+LeenqUp Merchant Partnerships`,
+    channel: 'email',
+    type: 'cold-outreach',
+    persona: 'general-merchant',
+    stage: 'first-contact',
+    tags: ['founding-merchant', 'cold', 'email', 'short', 'first-contact'],
+    notes: 'Use when you have a name and business but limited context. Keep subject line clean — do not change it. Personalize the first line with something specific about their business.',
+    createdAt: '2026-04-21T08:00:00Z',
+    updatedAt: '2026-04-21T08:00:00Z',
+  },
+  {
+    id: 'scr_017',
+    title: 'Cold email — founding merchant invite, detailed version with full benefits',
+    body: `Subject: Invitation: Founding Merchant Storefront — LeenqUp (launching soon)
+
+Good morning [Name],
+
+My name is [Rep Name], and I'm reaching out on behalf of LeenqUp — a new marketplace we're building specifically for Liberian businesses and the buyers who want to support them.
+
+We came across [Business Name] and believe you'd be a strong fit for our founding merchant cohort. Before we open to the public, we're inviting a small, curated group of established businesses to launch with us. Here's exactly what that includes:
+
+🏪 Free digital storefront
+A complete business profile built with our team — your story, your products, your payment options. No setup fee. No monthly subscription. You pay a small commission only when you complete a sale.
+
+✅ Identity confirmed profile
+Your business details go on file with us. Buyers — especially diaspora buyers in the US who can't verify you in person — see exactly who they're buying from before any money moves. That trust converts browsers into paying customers.
+
+🌍 Diaspora buyer discovery
+Hundreds of thousands of Liberian-Americans are actively looking for ways to support businesses back home. Right now, most of them can't find you. Founding merchants are the first sellers this audience sees when we go live.
+
+🥇 Priority listing at launch
+Founding merchants appear first in search results the moment we open to the public. First in, first found — and that position stays with you as your activity record grows.
+
+⭐ Proof-based ratings from your first sale
+Every completed order automatically builds your public activity record. Your reputation grows visibly with every transaction, before any new buyer has ever spoken to you.
+
+🤝 Direct team access throughout setup
+During the founding period, you have a direct line to our team. We help you set up, answer questions, and make sure your storefront represents your business the right way. You're not navigating this alone.
+
+📖 Your place in the founding story
+Every platform remembers who showed up first. Founding merchants are recognized as LeenqUp originals — and buyers will see that from day one.
+
+The founding cohort is intentionally small. We want to work closely with every business we bring on so each one launches with a complete, compelling profile that actually converts.
+
+I'd welcome a brief call or can share our founding merchant overview if helpful. Or you can apply directly at LeenqUp.com — spots are limited and closing soon.
+
+Warm regards,
+[Rep Name]
+LeenqUp Merchant Partnerships
+[email] | LeenqUp.com`,
+    channel: 'email',
+    type: 'cold-outreach',
+    persona: 'general-merchant',
+    stage: 'first-contact',
+    tags: ['founding-merchant', 'cold', 'email', 'detailed', 'benefits', 'first-contact'],
+    notes: 'Use for higher-priority leads where you want to give the full picture upfront. Works especially well for hospitality businesses (guesthouses, restaurants) and established fashion/beauty sellers.',
+    createdAt: '2026-04-21T08:00:00Z',
+    updatedAt: '2026-04-21T08:00:00Z',
+  },
 ]

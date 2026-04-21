@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     // Step 2 — list channels in the organization
     const channelsResult = await gql(
       token,
-      `query GetChannels($orgId: String!) {
+      `query GetChannels($orgId: OrganizationId!) {
         channels(input: { organizationId: $orgId }) {
           id
           name

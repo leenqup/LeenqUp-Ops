@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     // Step 2 — list channels so we can filter by service/platform
     const channelsResult = await gql(
       token,
-      `query GetChannels($orgId: String!) {
+      `query GetChannels($orgId: OrganizationId!) {
         channels(input: { organizationId: $orgId }) {
           id
           name

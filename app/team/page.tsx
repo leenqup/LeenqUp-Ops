@@ -150,10 +150,30 @@ export default function TeamPage() {
     }
   }
 
+  const handleMarkActive = async (memberId: string, name: string) => {
+    try {
+      await fetch('/api/team/accept', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, status: 'active' }),
+      })
+      await loadMembers()
+      toast(`${name} marked as active`)
+    } catch {
+      toast('Failed to update status')
+    }
+  }
+
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url)
     setCopiedUrl(true)
     setTimeout(() => setCopiedUrl(false), 2000)
+  }
+
+  const copyInviteLink = (token: string) => {
+    const url = `${window.location.origin}/team/accept?token=${token}`
+    navigator.clipboard.writeText(url)
+    toast('Invite link copied')
   }
 
   return (
@@ -256,6 +276,9 @@ export default function TeamPage() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${stCfg.color}`}>{stCfg.label}</span>
                       </div>
                       <p className="text-xs text-slate-400">{m.email} · Invited {timeAgo(m.invitedAt)}</p>
+                      {m.status === 'invited' && (
+                        <p className="text-xs text-amber-500 mt-0.5">Pending — they need to click their invite link to activate</p>
+                      )}
                       {m.lastActiveAt && <p className="text-xs text-slate-400">Last active {timeAgo(m.lastActiveAt)}</p>}
                     </div>
 
@@ -268,6 +291,26 @@ export default function TeamPage() {
                     {/* Admin controls */}
                     {isAdmin && (
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        {/* Copy invite link (invited only) */}
+                        {m.status === 'invited' && (
+                          <button
+                            onClick={() => copyInviteLink(m.inviteToken)}
+                            className="p-1.5 text-slate-400 hover:text-brand-purple transition-colors rounded-lg"
+                            title="Copy invite link"
+                          >
+                            <LinkIcon className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {/* Mark active (invited only) */}
+                        {m.status === 'invited' && (
+                          <button
+                            onClick={() => handleMarkActive(m.id, m.name)}
+                            className="p-1.5 text-slate-400 hover:text-brand-green transition-colors rounded-lg"
+                            title="Mark as active"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         {/* Role selector */}
                         <select
                           value={m.role}

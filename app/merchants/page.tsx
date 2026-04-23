@@ -82,6 +82,7 @@ import {
   initializeStorage,
 } from '@/lib/storage'
 import { supabase, mapMerchantRow } from '@/lib/supabase'
+import { computeMerchantHealth } from '@/lib/merchant-health'
 import { generateId, cn, formatDate } from '@/lib/utils'
 import type {
   Merchant,
@@ -1487,6 +1488,7 @@ export default function MerchantsPage() {
   const [filterSource, setFilterSource] = useState('all')
   const [filterCountry, setFilterCountry] = useState('all')
   const [filterContactMethod, setFilterContactMethod] = useState('all')
+  const [filterHealth, setFilterHealth] = useState<'all' | 'healthy' | 'at-risk' | 'critical'>('all')
   const [viewMode, setViewMode] = useState<'table' | 'tier'>('table')
   // Virtual pagination — how many filtered rows to display (load more on scroll)
   const [displayCount, setDisplayCount] = useState(50)
@@ -1624,6 +1626,12 @@ export default function MerchantsPage() {
         if (filterContactMethod === 'has_email' && !m.email) return false
         if (filterContactMethod === 'has_phone' && !m.phone) return false
         if (filterContactMethod === 'has_whatsapp' && !m.whatsapp) return false
+        if (filterHealth !== 'all') {
+          const score = computeMerchantHealth(m).total
+          if (filterHealth === 'healthy' && score < 70) return false
+          if (filterHealth === 'at-risk' && (score < 30 || score >= 70)) return false
+          if (filterHealth === 'critical' && score >= 30) return false
+        }
         return true
       })
       .sort((a, b) => {
@@ -1633,7 +1641,7 @@ export default function MerchantsPage() {
       }),
     [merchants, search, filterSegment, filterCategory, filterStatus, filterPriority, filterDigital,
       filterTier, filterLibdelivery, filterShipsToLiberia, filterCounty, filterCountry, filterSource,
-      filterContactMethod, sortKey, sortDir]
+      filterContactMethod, filterHealth, sortKey, sortDir]
   )
 
   // Paginated slice — what's actually rendered in the table
@@ -1643,7 +1651,7 @@ export default function MerchantsPage() {
   useEffect(() => { setDisplayCount(50) }, [
     search, filterSegment, filterCategory, filterStatus, filterPriority, filterDigital,
     filterTier, filterLibdelivery, filterShipsToLiberia, filterCounty, filterCountry,
-    filterSource, filterContactMethod, sortKey, sortDir,
+    filterSource, filterContactMethod, filterHealth, sortKey, sortDir,
   ])
 
   const handleSort = (key: SortKey) => {
@@ -1723,6 +1731,7 @@ export default function MerchantsPage() {
     setFilterSource('all')
     setFilterCountry('all')
     setFilterContactMethod('all')
+    setFilterHealth('all')
   }
 
   // WhatsApp CSV export — downloads name + phone for the currently filtered list
@@ -2354,6 +2363,19 @@ export default function MerchantsPage() {
               </Select>
             </div>
 
+            {/* Health filter */}
+            <div className="w-[160px]">
+              <Select value={filterHealth} onValueChange={v => setFilterHealth(v as typeof filterHealth)}>
+                <SelectTrigger><SelectValue placeholder="Health" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Health</SelectItem>
+                  <SelectItem value="healthy">Healthy (A/B)</SelectItem>
+                  <SelectItem value="at-risk">At Risk (C/D)</SelectItem>
+                  <SelectItem value="critical">Critical (F)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
               <X className="h-4 w-4" /> Clear
             </Button>
@@ -2438,13 +2460,16 @@ export default function MerchantsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                   Completeness
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  Health
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-navy-500">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center text-sm text-slate-400">
+                  <td colSpan={12} className="px-4 py-12 text-center text-sm text-slate-400">
                     No merchants match your filters.
                   </td>
                 </tr>
@@ -2525,6 +2550,24 @@ export default function MerchantsPage() {
                     {/* Completeness cell */}
                     <td className="px-4 py-3 w-[120px]">
                       <CompletenessBar pct={pct} />
+                    </td>
+                    {/* Health grade cell */}
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const h = computeMerchantHealth(m)
+                        const gradeColors: Record<string, string> = {
+                          A: 'bg-emerald-100 text-emerald-800',
+                          B: 'bg-blue-100 text-blue-800',
+                          C: 'bg-amber-100 text-amber-800',
+                          D: 'bg-orange-100 text-orange-800',
+                          F: 'bg-red-100 text-red-800',
+                        }
+                        return (
+                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${gradeColors[h.grade]}`}>
+                            {h.grade}
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-2">

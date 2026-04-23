@@ -27,6 +27,9 @@ import {
   BarChart3,
   Search,
   UserCog,
+  Brain,
+  Target,
+  Layers,
 } from 'lucide-react'
 import { useCommandPalette } from './command-palette'
 import { cn } from '@/lib/utils'
@@ -59,6 +62,15 @@ const navSections = [
       { href: '/calendar', label: 'Calendar', icon: CalendarDays },
       { href: '/reports', label: 'Reports', icon: BarChart3 },
       { href: '/feed', label: 'Activity Feed', icon: Activity },
+    ],
+  },
+  {
+    label: 'INTELLIGENCE',
+    items: [
+      { href: '/intelligence', label: 'Market Intel', icon: Brain },
+      { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+      { href: '/goals', label: 'Goals & OKRs', icon: Target },
+      { href: '/digest', label: 'Weekly Digest', icon: Layers },
     ],
   },
   {

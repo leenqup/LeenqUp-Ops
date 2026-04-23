@@ -4,6 +4,7 @@ import type {
   Post, Script, EmailSequence, Campaign, SOP, BrandResponse, Merchant, AppSettings, SOPCompletion,
   ProjectBoard, ProjectCard, Deal, CRMActivity, MerchantAccount, DiasporaLink,
   SellerProfile, PriceBenchmark, CategoryTrend, DiasporaDemandSignal,
+  Goal,
   ExpenseEntry, RevenueEntry, CashPosition, InvestorKPIs,
   TeamMember, ActivityEntry, ActivityAction, ActivityEntityType,
 } from '@/types'
@@ -48,6 +49,8 @@ const KEYS = {
   investorKpis: 'leenqup_investor_kpis',
   // Team & Activity (v5)
   activityFeed: 'leenqup_activity_feed',
+  // Goals (v6)
+  goals: 'leenqup_goals',
 }
 
 function getItem<T>(key: string): T | null {
@@ -79,7 +82,7 @@ function setItem<T>(key: string, value: T): void {
 
 // Schema version — bump this whenever new localStorage keys are added.
 // On load, migrate() backfills any missing keys so existing users aren't left blank.
-const SCHEMA_VERSION = '5'
+const SCHEMA_VERSION = '6'
 const SCHEMA_VERSION_KEY = 'leenqup_schema_version'
 
 const NEW_KEYS_V2 = [
@@ -479,6 +482,19 @@ export function upsertDemandSignal(signal: DiasporaDemandSignal): void {
 }
 export function deleteDemandSignal(id: string): void {
   saveDemandSignals(getDemandSignals().filter(s => s.id !== id))
+}
+
+// ── Goals & OKRs ──────────────────────────────────────────────
+export function getGoals(): Goal[] { return getItem<Goal[]>(KEYS.goals) ?? [] }
+export function saveGoals(g: Goal[]): void { setItem(KEYS.goals, g) }
+export function upsertGoal(goal: Goal): void {
+  const all = getGoals()
+  const idx = all.findIndex(g => g.id === goal.id)
+  if (idx >= 0) all[idx] = goal; else all.unshift(goal)
+  saveGoals(all)
+}
+export function deleteGoal(id: string): void {
+  saveGoals(getGoals().filter(g => g.id !== id))
 }
 
 // SOP Completions

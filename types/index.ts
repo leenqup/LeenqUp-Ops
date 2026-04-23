@@ -556,6 +556,34 @@ export interface DiasporaDemandSignal {
 }
 
 // ============================================================
+// Goals & OKRs
+// ============================================================
+
+export type GoalStatus = 'on-track' | 'at-risk' | 'behind' | 'completed'
+export type GoalPeriod = 'weekly' | 'monthly' | 'quarterly'
+
+export interface GoalKeyResult {
+  id: string
+  description: string
+  targetValue: number
+  currentValue: number
+  unit: string
+}
+
+export interface Goal {
+  id: string
+  title: string
+  period: GoalPeriod
+  periodLabel: string
+  owner: string
+  status: GoalStatus
+  keyResults: GoalKeyResult[]
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ============================================================
 // Finance Tracker
 // ============================================================
 

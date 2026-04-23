@@ -19,6 +19,7 @@ import {
   Tag,
   Wifi,
   ExternalLink,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -41,6 +42,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { computeMerchantHealth } from '@/lib/merchant-health'
 import {
   getMerchants,
   getSellerProfile,
@@ -336,6 +338,80 @@ export default function SellerDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Health Score card */}
+      {(() => {
+        const health = computeMerchantHealth(merchant)
+        const gradeColors: Record<string, string> = {
+          A: 'bg-emerald-100 text-emerald-800',
+          B: 'bg-blue-100 text-blue-800',
+          C: 'bg-amber-100 text-amber-800',
+          D: 'bg-orange-100 text-orange-800',
+          F: 'bg-red-100 text-red-800',
+        }
+        const breakdownRows = [
+          { label: 'Contact Info',       value: health.breakdown.contactCompleteness },
+          { label: 'Outreach Activity',  value: health.breakdown.outreachActivity },
+          { label: 'Pipeline Stage',     value: health.breakdown.pipelineStage },
+          { label: 'Notes',              value: health.breakdown.notesDepth },
+        ]
+        return (
+          <div className="bg-white dark:bg-navy-600 rounded-xl border border-slate-200 dark:border-navy-500 p-5 space-y-4">
+            {/* Header row */}
+            <div className="flex items-center gap-3">
+              <h2 className="font-semibold text-navy-500 dark:text-white text-base">Health Score</h2>
+              <span className={cn('px-2 py-0.5 rounded text-sm font-bold', gradeColors[health.grade])}>
+                {health.grade}
+              </span>
+            </div>
+
+            {/* Overall score + bar */}
+            <div className="space-y-1.5">
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-navy-500 dark:text-white">{health.total}</span>
+                <span className="text-slate-400 text-sm">/100</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 dark:bg-navy-400 rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all',
+                    health.total >= 70 ? 'bg-emerald-500' : health.total >= 50 ? 'bg-amber-500' : health.total >= 30 ? 'bg-orange-500' : 'bg-red-500',
+                  )}
+                  style={{ width: `${health.total}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Breakdown table */}
+            <div className="border border-slate-100 dark:border-navy-500 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-slate-50 dark:divide-navy-500">
+                  {breakdownRows.map(row => (
+                    <tr key={row.label}>
+                      <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{row.label}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-navy-500 dark:text-white tabular-nums">
+                        {row.value}<span className="text-slate-400 font-normal">/25</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Flags */}
+            {health.flags.length > 0 && (
+              <div className="space-y-1">
+                {health.flags.map(flag => (
+                  <div key={flag} className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">
+                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                    {flag}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Tabs */}
       <Tabs defaultValue="onboarding">

@@ -225,11 +225,6 @@ export interface AppSettings {
   googleSheetsId?: string           // Spreadsheet ID from the Sheets URL
   // Make.com inbound
   makeInboundSecret?: string        // Shared secret for X-LeenqUp-Secret header validation
-  // Team identity (device-local, never synced)
-  teamMemberEmail?: string
-  teamMemberName?: string
-  teamMemberRole?: TeamRole
-  teamInviteToken?: string          // Token used to validate this device's identity
 }
 
 export interface ConnectionStatus {

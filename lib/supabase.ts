@@ -1,12 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 import type { Merchant } from '@/types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Singleton client — reused across the app
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: false },
+// Singleton browser client — cookie-based session persistence for auth
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
   realtime: { params: { eventsPerSecond: 10 } },
 })
 

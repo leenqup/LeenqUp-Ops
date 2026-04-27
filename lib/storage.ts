@@ -628,12 +628,11 @@ export function logActivity(
   setItem(KEYS.activityFeed, trimmed)
 }
 
-/** Convenience: read current user identity from settings for feed entries */
+/** Convenience: stub user identity for feed entries (real identity from Supabase session) */
 function currentUser(): { userEmail: string; userName: string } {
-  const s = getItem<{ teamMemberEmail?: string; teamMemberName?: string }>(KEYS.settings) ?? {}
   return {
-    userEmail: s.teamMemberEmail ?? 'team@leenqup.com',
-    userName: s.teamMemberName ?? 'Team',
+    userEmail: 'team@leenqup.com',
+    userName: 'Team',
   }
 }
 

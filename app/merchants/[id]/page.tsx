@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { computeMerchantHealth } from '@/lib/merchant-health'
 import {
   getMerchants,
@@ -300,7 +301,8 @@ export default function SellerDashboardPage() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap mb-1">
-              <h1 className="text-xl font-bold text-navy-500 dark:text-white">{merchant.name}</h1>
+              <Breadcrumb />
+            <h1 className="text-xl font-bold text-navy-500 dark:text-white">{merchant.name}</h1>
               <OutreachBadge status={merchant.outreachStatus} />
               {merchant.tier && (
                 <Badge variant="outline" className="text-[10px]">Tier {merchant.tier}</Badge>

@@ -31,7 +31,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/toaster'
-import { getSettings } from '@/lib/storage'
+import { useAuth } from '@/components/auth-provider'
 import type { TeamMember, TeamRole } from '@/types'
 
 // ── Role config ───────────────────────────────────────────────
@@ -70,9 +70,7 @@ export default function TeamPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteResult, setInviteResult] = useState<{ acceptUrl: string; emailSent: boolean } | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
-  const settings = getSettings()
-  const currentRole = settings.teamMemberRole ?? 'admin'
-  const isAdmin = currentRole === 'admin'
+  const { role: currentRole, isAdmin, user } = useAuth()
 
   const loadMembers = async () => {
     setLoading(true)
@@ -92,18 +90,14 @@ export default function TeamPage() {
     if (!inviteEmail.trim() || !inviteName.trim()) return
     setInviting(true)
     try {
-      const s = getSettings()
       const res = await fetch('/api/team/invite', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(s.brevoApiKey ? { 'x-brevo-key': s.brevoApiKey } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: inviteEmail.trim(),
           name: inviteName.trim(),
           role: inviteRole,
-          invitedByEmail: s.teamMemberEmail ?? 'admin@leenqup.com',
+          invitedByEmail: user?.email ?? 'admin@leenqup.com',
           inviteBaseUrl: window.location.origin,
         }),
       })
@@ -200,20 +194,20 @@ export default function TeamPage() {
       </div>
 
       {/* Your identity card */}
-      {settings.teamMemberEmail && (
+      {user && (
         <Card className="mb-6 border-coral/20 bg-coral/5 dark:bg-coral/10">
           <CardContent className="py-4 px-5">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-coral/20 flex items-center justify-center flex-shrink-0">
                 <span className="text-coral font-bold text-sm">
-                  {(settings.teamMemberName ?? settings.teamMemberEmail)[0].toUpperCase()}
+                  {(user.email ?? '?')[0].toUpperCase()}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-navy dark:text-white">{settings.teamMemberName ?? settings.teamMemberEmail}</p>
-                <p className="text-xs text-slate-500">{settings.teamMemberEmail} · <span className="capitalize font-medium text-coral">{settings.teamMemberRole}</span></p>
+                <p className="text-sm font-semibold text-navy dark:text-white">{user.user_metadata?.name ?? user.email}</p>
+                <p className="text-xs text-slate-500">{user.email} · <span className="capitalize font-medium text-coral">{currentRole}</span></p>
               </div>
-              <Badge className={`ml-auto ${roleConfig[settings.teamMemberRole ?? 'admin']?.color}`}>
+              <Badge className={`ml-auto ${roleConfig[currentRole ?? 'viewer']?.color}`}>
                 You
               </Badge>
             </div>

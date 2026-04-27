@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/toaster'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { brandVoice } from '@/data/brand'
 import { getBrandResponses, upsertBrandResponse, deleteBrandResponse } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
@@ -453,6 +454,7 @@ export default function BrandPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
+        <Breadcrumb />
         <h1 className="text-2xl font-bold text-navy">Brand</h1>
         <p className="text-sm text-slate-500 mt-0.5">Voice reference and response library</p>
       </div>

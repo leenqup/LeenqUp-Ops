@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/toaster'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { getCampaigns, upsertCampaign, getPosts, initializeStorage } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 import type { Campaign, CampaignPhase, CampaignStatus, Post } from '@/types'
@@ -673,6 +674,7 @@ export default function CampaignsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          <Breadcrumb />
           <h1 className="text-2xl font-bold text-navy">Campaigns</h1>
           <p className="text-sm text-slate-500 mt-0.5">Manage and deploy campaign bundles by phase</p>
         </div>

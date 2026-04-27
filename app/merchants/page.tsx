@@ -59,6 +59,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/toaster'
+import { Breadcrumb } from '@/components/breadcrumb'
 import {
   getMerchants,
   saveMerchants,
@@ -1827,6 +1828,7 @@ export default function MerchantsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
+          <Breadcrumb />
           <h1 className="text-2xl font-bold text-navy dark:text-white">Merchants</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             {merchants.length} total · {allFiltered.length} matching

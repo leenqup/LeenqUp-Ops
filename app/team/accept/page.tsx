@@ -41,15 +41,7 @@ function AcceptContent() {
       })
       const data = await res.json()
       if (data.success) {
-        // Save identity to local settings (device-local, never synced)
-        const settings = getSettings()
-        saveSettings({
-          ...settings,
-          teamMemberEmail: data.member.email,
-          teamMemberName: inputName.trim(),
-          teamMemberRole: data.member.role,
-          teamInviteToken: token,
-        })
+        // Identity is now managed by Supabase Auth session — no local settings needed
         setMember(data.member)
         setStep('done')
       } else {

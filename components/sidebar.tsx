@@ -30,10 +30,15 @@ import {
   Brain,
   Target,
   Layers,
+  LogOut,
+  Crown,
+  Edit3,
+  Eye,
 } from 'lucide-react'
 import { useCommandPalette } from './command-palette'
 import { cn } from '@/lib/utils'
 import { getSettings } from '@/lib/storage'
+import { useAuth } from '@/components/auth-provider'
 
 const navSections = [
   {
@@ -66,6 +71,7 @@ const navSections = [
   },
   {
     label: 'INTELLIGENCE',
+    minRole: 'editor' as const, // viewers cannot see this section
     items: [
       { href: '/intelligence', label: 'Market Intel', icon: Brain },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -91,11 +97,19 @@ function ConnectionDot({ connected }: { connected: boolean }) {
   )
 }
 
+const roleDisplay = {
+  admin:  { label: 'Admin',  icon: Crown,  color: 'text-coral' },
+  editor: { label: 'Editor', icon: Edit3,  color: 'text-blue-400' },
+  viewer: { label: 'Viewer', icon: Eye,    color: 'text-slate-400' },
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [connections, setConnections] = useState({ buffer: false, brevo: false, notion: false })
   const { setOpen: openSearch } = useCommandPalette()
+  const { user, role, isAdmin, signOut } = useAuth()
+  const RoleIcon = role ? roleDisplay[role].icon : Eye
 
   useEffect(() => {
     const s = getSettings()
@@ -132,7 +146,10 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {navSections.map((section, sIdx) => (
+        {navSections.map((section, sIdx) => {
+          // Hide sections that require a minimum role
+          if (section.minRole === 'editor' && role === 'viewer') return null
+          return (
           <div key={sIdx}>
             {section.label && (
               <p className="text-[10px] font-semibold text-slate-400 tracking-widest px-3 pt-3 pb-1">
@@ -161,7 +178,8 @@ export function Sidebar() {
               })}
             </div>
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       {/* Connection Status */}
@@ -186,35 +204,71 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Settings + Team */}
-      <div className="px-3 py-3 border-t border-navy-600 space-y-0.5">
-        <Link
-          href="/team"
-          onClick={() => setMobileOpen(false)}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
-            pathname === '/team'
-              ? 'bg-coral text-white'
-              : 'text-slate-200 hover:bg-navy-600 hover:text-white'
-          )}
-        >
-          <UserCog className="h-4 w-4" />
-          Team
-        </Link>
-        <Link
-          href="/settings"
-          onClick={() => setMobileOpen(false)}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
-            pathname === '/settings'
-              ? 'bg-coral text-white'
-              : 'text-slate-200 hover:bg-navy-600 hover:text-white'
-          )}
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Link>
-      </div>
+      {/* Settings + Team — admin only */}
+      {isAdmin && (
+        <div className="px-3 py-2 border-t border-navy-600 space-y-0.5">
+          <Link
+            href="/team"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+              pathname === '/team'
+                ? 'bg-coral text-white'
+                : 'text-slate-200 hover:bg-navy-600 hover:text-white'
+            )}
+          >
+            <UserCog className="h-4 w-4" />
+            Team
+          </Link>
+          <Link
+            href="/settings"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+              pathname === '/settings'
+                ? 'bg-coral text-white'
+                : 'text-slate-200 hover:bg-navy-600 hover:text-white'
+            )}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+        </div>
+      )}
+
+      {/* User identity + sign out */}
+      {user && (
+        <div className="px-3 py-3 border-t border-navy-600">
+          <div className="flex items-center gap-2.5 px-2">
+            {/* Avatar */}
+            <div className="w-7 h-7 rounded-full bg-navy-600 border border-navy-500 flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-bold text-slate-200 uppercase">
+                {user.email?.[0] ?? '?'}
+              </span>
+            </div>
+            {/* Email + role */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-slate-200 truncate leading-none mb-0.5">
+                {user.email}
+              </p>
+              {role && (
+                <span className={cn('text-[10px] font-semibold flex items-center gap-0.5', roleDisplay[role].color)}>
+                  <RoleIcon className="h-2.5 w-2.5" />
+                  {roleDisplay[role].label}
+                </span>
+              )}
+            </div>
+            {/* Sign out */}
+            <button
+              onClick={signOut}
+              title="Sign out"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-navy-600 rounded-lg transition-colors flex-shrink-0"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 

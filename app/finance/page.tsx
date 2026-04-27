@@ -57,6 +57,9 @@ import {
 } from '@/lib/storage'
 import { generateId, cn } from '@/lib/utils'
 import type { ExpenseEntry, RevenueEntry, CashPosition, InvestorKPIs, ExpenseCategory, RevenueType } from '@/types'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { useAuth } from '@/components/auth-provider'
+import { AccessRestricted } from '@/components/role-gate'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -589,6 +592,9 @@ function InvestorKPIsCard({ kpis, onSave }: { kpis: InvestorKPIs[]; onSave: (k: 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function FinancePage() {
+  const { role } = useAuth()
+  if (role === 'viewer') return <AccessRestricted />
+
   const [expenses, setExpenses] = useState<ExpenseEntry[]>([])
   const [revenues, setRevenues] = useState<RevenueEntry[]>([])
   const [cashPositions, setCashPositions] = useState<CashPosition[]>([])
@@ -679,6 +685,7 @@ export default function FinancePage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
+          <Breadcrumb />
           <h1 className="text-2xl font-bold text-navy dark:text-white">Finance Tracker</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Track burn, revenue, and runway. Replaces your spreadsheet.</p>
         </div>

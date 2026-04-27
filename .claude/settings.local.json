@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls public/trueliberia*)",
+      "mcp__d022e02e-b034-48c1-8299-db2221308cbf__list_projects",
+      "mcp__d022e02e-b034-48c1-8299-db2221308cbf__apply_migration",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

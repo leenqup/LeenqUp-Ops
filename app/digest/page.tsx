@@ -26,6 +26,9 @@ import {
 import { toast } from '@/components/ui/toaster'
 import { generateDigest, type DigestReport } from '@/lib/digest'
 import { initializeStorage, getSettings } from '@/lib/storage'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { useAuth } from '@/components/auth-provider'
+import { AccessRestricted } from '@/components/role-gate'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -185,6 +188,9 @@ function SlackDialog({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DigestPage() {
+  const { role } = useAuth()
+  if (role === 'viewer') return <AccessRestricted />
+
   const [weekOffset, setWeekOffset] = useState(0)
   const [digest, setDigest] = useState<DigestReport | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -224,6 +230,7 @@ export default function DigestPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
+          <Breadcrumb />
           <div className="flex items-center gap-2 mb-0.5">
             <FileText className="h-5 w-5 text-brand-purple" />
             <h1 className="text-2xl font-bold text-navy dark:text-white">Weekly Digest</h1>

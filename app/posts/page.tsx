@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toaster'
+import { Breadcrumb } from '@/components/breadcrumb'
 import {
   getPosts,
   upsertPost,
@@ -1207,6 +1208,7 @@ export default function PostsPage() {
       <div className="px-6 py-5 border-b border-gray-100 dark:border-navy-500 bg-white dark:bg-navy-600 sticky top-0 z-30">
         <div className="flex items-center justify-between gap-4">
           <div>
+            <Breadcrumb />
             <h1 className="text-xl font-bold text-navy dark:text-white">Post Library</h1>
             <p className="text-sm text-slate-500 mt-0.5">
               {filteredPosts.length} of {allPosts.length} posts

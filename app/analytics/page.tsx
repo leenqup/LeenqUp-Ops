@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { getMerchants, getScripts, initializeStorage } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import type { Merchant, Script, OutreachStatus, ScriptType, ScriptChannel } from '@/types'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { useAuth } from '@/components/auth-provider'
+import { AccessRestricted } from '@/components/role-gate'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -442,6 +445,9 @@ function VelocitySnapshot({ merchants }: { merchants: Merchant[] }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const { role } = useAuth()
+  if (role === 'viewer') return <AccessRestricted />
+
   const [merchants, setMerchants] = useState<Merchant[]>([])
   const [scripts, setScripts] = useState<Script[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -457,6 +463,7 @@ export default function AnalyticsPage() {
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-6">
+        <Breadcrumb />
         <h1 className="text-2xl font-bold text-navy dark:text-white">Pipeline Analytics</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
           Computed from your current merchant pipeline and script library.

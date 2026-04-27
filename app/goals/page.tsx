@@ -39,6 +39,9 @@ import {
 } from '@/lib/storage'
 import { generateId, cn } from '@/lib/utils'
 import type { Goal, GoalKeyResult, GoalStatus, GoalPeriod } from '@/types'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { useAuth } from '@/components/auth-provider'
+import { AccessRestricted } from '@/components/role-gate'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -585,6 +588,9 @@ function DeleteDialog({
 type ViewMode = 'board' | 'list'
 
 export default function GoalsPage() {
+  const { role } = useAuth()
+  if (role === 'viewer') return <AccessRestricted />
+
   const [goals, setGoals] = useState<Goal[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [modalOpen, setModalOpen] = useState(false)
@@ -636,6 +642,7 @@ export default function GoalsPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
+          <Breadcrumb />
           <div className="flex items-center gap-2">
             <Target className="h-6 w-6 text-brand-purple" />
             <h1 className="text-2xl font-bold text-navy dark:text-white">Goals & OKRs</h1>

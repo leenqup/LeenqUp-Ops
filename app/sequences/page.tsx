@@ -29,6 +29,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/toaster'
+import { Breadcrumb } from '@/components/breadcrumb'
 import {
   getSequences,
   upsertSequence,
@@ -783,6 +784,7 @@ export default function SequencesPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
+            <Breadcrumb />
             <h1 className="text-2xl font-bold text-navy dark:text-white">Email Sequences</h1>
             <p className="text-sm text-slate-500 mt-0.5">
               {sequences.length} sequence{sequences.length !== 1 ? 's' : ''}

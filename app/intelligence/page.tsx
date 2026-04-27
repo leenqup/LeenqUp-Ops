@@ -48,6 +48,9 @@ import {
 } from '@/lib/storage'
 import { generateId, cn } from '@/lib/utils'
 import type { PriceBenchmark, CategoryTrend, DiasporaDemandSignal, TrendDirection } from '@/types'
+import { Breadcrumb } from '@/components/breadcrumb'
+import { useAuth } from '@/components/auth-provider'
+import { AccessRestricted } from '@/components/role-gate'
 
 // ─── Blank form factories ──────────────────────────────────────────────────────
 
@@ -555,6 +558,9 @@ function DemandBadge({ level }: { level: 'high' | 'medium' | 'low' }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function IntelligencePage() {
+  const { role } = useAuth()
+  if (role === 'viewer') return <AccessRestricted />
+
   const [benchmarks, setBenchmarks] = useState<PriceBenchmark[]>([])
   const [trends, setTrends] = useState<CategoryTrend[]>([])
   const [signals, setSignals] = useState<DiasporaDemandSignal[]>([])
@@ -632,6 +638,7 @@ export default function IntelligencePage() {
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-6">
+        <Breadcrumb />
         <h1 className="text-2xl font-bold text-navy dark:text-white">Market Intelligence</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
           Track competitive pricing, category trends, and diaspora demand signals.

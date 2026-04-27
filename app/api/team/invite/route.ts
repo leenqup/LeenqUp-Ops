@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import type { TeamMember, TeamRole } from '@/types'
 
 const TEAM_KEY = 'leenqup_team_members'
@@ -44,7 +45,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `${email} already has an active invite or account` }, { status: 409 })
   }
 
-  // Generate invite token
   const token = Array.from(crypto.getRandomValues(new Uint8Array(24)))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
@@ -63,43 +63,26 @@ export async function POST(req: NextRequest) {
   members.push(member)
   await saveTeamMembers(members)
 
-  const acceptUrl = `${inviteBaseUrl ?? ''}/team/accept?token=${token}`
-
-  // Send invite email via Brevo if API key provided
+  // Send invite via Supabase Auth (handles email automatically)
+  // The invite link routes through /auth/callback?mode=invite → /reset-password
   let emailSent = false
-  if (brevoApiKey) {
-    try {
-      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'api-key': brevoApiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender: { email: 'noreply@leenqup.com', name: 'LeenqUp Ops' },
-          to: [{ email, name }],
-          subject: `${invitedByEmail} invited you to LeenqUp Ops`,
-          htmlContent: `
-            <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-              <h2 style="color: #1a2b4b; margin-bottom: 8px;">You've been invited to LeenqUp Ops</h2>
-              <p style="color: #64748b; margin-bottom: 24px;">
-                <strong>${invitedByEmail}</strong> has invited you to join LeenqUp Ops as <strong>${role}</strong>.
-              </p>
-              <a href="${acceptUrl}" style="display: inline-block; background: #E5573D; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-bottom: 24px;">
-                Accept Invitation
-              </a>
-              <p style="color: #94a3b8; font-size: 12px;">
-                Or copy this link: ${acceptUrl}
-              </p>
-              <p style="color: #94a3b8; font-size: 12px; margin-top: 16px;">
-                This link is specific to you. Do not share it.
-              </p>
-            </div>
-          `,
-        }),
-      })
-      emailSent = res.ok
-    } catch {
-      // Email failure is non-fatal — invite link still works
+  try {
+    const adminClient = createSupabaseAdminClient()
+    const callbackUrl = `${inviteBaseUrl ?? ''}/auth/callback?mode=invite`
+    const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+      redirectTo: callbackUrl,
+      data: { role, name },
+    })
+    emailSent = !inviteError
+    if (inviteError) {
+      console.error('Supabase invite error:', inviteError.message)
     }
+  } catch (err) {
+    // Invite email failure is non-fatal — link still stored in kv_store
+    console.error('Invite send failed:', err)
   }
+
+  const acceptUrl = `${inviteBaseUrl ?? ''}/team/accept?token=${token}`
 
   return NextResponse.json({
     success: true,

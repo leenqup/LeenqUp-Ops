@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/sidebar'
 
 // Auth routes that get the full-screen login experience (no sidebar)
-const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password']
+const AUTH_PATHS = ['/login', '/forgot-password', '/reset-password', '/setup']
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

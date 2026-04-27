@@ -129,7 +129,10 @@ function LoginForm() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-xs text-slate-400">
-          Access is by invitation only.
+          Access is by invitation only.{' '}
+          <Link href="/setup" className="text-slate-300 hover:text-[#E5573D] transition-colors">
+            First time?
+          </Link>
         </p>
       </div>
     </div>

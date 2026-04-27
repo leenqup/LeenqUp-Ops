@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { CookieOptions } from '@supabase/ssr'
 
 // Paths that don't require authentication
-const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password', '/auth/callback']
+const PUBLIC_PATHS = ['/login', '/forgot-password', '/reset-password', '/auth/callback', '/setup']
 
 // Paths restricted to admin only (redirect others to /)
 const ADMIN_ONLY_PATHS = ['/team', '/settings']

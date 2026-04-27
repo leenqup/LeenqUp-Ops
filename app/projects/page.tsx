@@ -33,6 +33,7 @@ import {
   initializeStorage,
 } from '@/lib/storage'
 import type { ProjectBoard } from '@/types'
+import { RoleGate } from '@/components/role-gate'
 
 const BOARD_COLORS = [
   { label: 'Coral', value: '#F05A4A' },
@@ -242,10 +243,12 @@ export default function ProjectsPage() {
             </div>
           </div>
         </div>
-        <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
-          <Plus className="h-4 w-4" />
-          New Board
-        </Button>
+        <RoleGate roles={['admin', 'editor']}>
+          <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
+            <Plus className="h-4 w-4" />
+            New Board
+          </Button>
+        </RoleGate>
       </div>
 
       {/* Board grid */}
@@ -256,10 +259,12 @@ export default function ProjectsPage() {
           </div>
           <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">No boards yet</h3>
           <p className="text-slate-500 mb-6 max-w-sm">Create your first project board to start tracking tasks, seller onboarding, and campaigns.</p>
-          <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
-            <Plus className="h-4 w-4" />
-            New Board
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
+              <Plus className="h-4 w-4" />
+              New Board
+            </Button>
+          </RoleGate>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -280,11 +285,13 @@ export default function ProjectsPage() {
                     <h3 className="font-semibold text-navy-500 dark:text-white text-base leading-tight line-clamp-1">
                       {board.title}
                     </h3>
-                    <BoardKebabMenu
-                      onEdit={() => openEditDialog(board)}
-                      onArchive={() => archiveBoard(board)}
-                      onDelete={() => setDeleteConfirm(board)}
-                    />
+                    <RoleGate roles={['admin', 'editor']}>
+                      <BoardKebabMenu
+                        onEdit={() => openEditDialog(board)}
+                        onArchive={() => archiveBoard(board)}
+                        onDelete={() => setDeleteConfirm(board)}
+                      />
+                    </RoleGate>
                   </div>
 
                   {board.description && (

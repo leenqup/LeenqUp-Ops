@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/toaster'
 import { Breadcrumb } from '@/components/breadcrumb'
+import { RoleGate } from '@/components/role-gate'
 import { brandVoice } from '@/data/brand'
 import { getBrandResponses, upsertBrandResponse, deleteBrandResponse } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
@@ -270,12 +271,14 @@ function ResponseCard({ response, onEdit, onDelete }: ResponseCardProps) {
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? 'Copied!' : 'Copy'}
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => onEdit(response)}>
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => onDelete(response)} className="text-red-400 hover:text-red-600 hover:bg-red-50">
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button variant="ghost" size="icon-sm" onClick={() => onEdit(response)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={() => onDelete(response)} className="text-red-400 hover:text-red-600 hover:bg-red-50">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </RoleGate>
         </div>
       </div>
     </div>
@@ -469,10 +472,12 @@ export default function BrandPage() {
             <h2 className="text-lg font-bold text-navy">Response Library</h2>
             <p className="text-xs text-slate-400 mt-0.5">{filtered.length} of {responses.length} responses</p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Response
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add Response
+            </Button>
+          </RoleGate>
         </div>
 
         {/* Filters */}
@@ -503,10 +508,12 @@ export default function BrandPage() {
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-slate-400">
             <p className="text-sm">No responses match your filters.</p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAddOpen(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Add Response
-            </Button>
+            <RoleGate roles={['admin', 'editor']}>
+              <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAddOpen(true)}>
+                <Plus className="h-3.5 w-3.5" />
+                Add Response
+              </Button>
+            </RoleGate>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">

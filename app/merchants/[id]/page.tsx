@@ -43,6 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { Breadcrumb } from '@/components/breadcrumb'
+import { RoleGate } from '@/components/role-gate'
 import { computeMerchantHealth } from '@/lib/merchant-health'
 import {
   getMerchants,
@@ -518,9 +519,11 @@ export default function SellerDashboardPage() {
                   <p className="text-xs text-slate-500">Avg quality score: <span className="font-semibold">{avgQuality}%</span></p>
                 )}
               </div>
-              <Button onClick={() => setShowListingDialog(true)} className="bg-coral hover:bg-coral/90 text-white gap-2" size="sm">
-                <Plus className="h-3.5 w-3.5" /> Add Listing
-              </Button>
+              <RoleGate roles={['admin', 'editor']}>
+                <Button onClick={() => setShowListingDialog(true)} className="bg-coral hover:bg-coral/90 text-white gap-2" size="sm">
+                  <Plus className="h-3.5 w-3.5" /> Add Listing
+                </Button>
+              </RoleGate>
             </div>
 
             {profile.listings.length === 0 ? (
@@ -581,12 +584,14 @@ export default function SellerDashboardPage() {
                           </div>
                         </td>
                         <td className="py-2.5 px-2">
-                          <button
-                            onClick={() => removeListing(listing.id)}
-                            className="text-slate-300 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <RoleGate roles={['admin', 'editor']}>
+                            <button
+                              onClick={() => removeListing(listing.id)}
+                              className="text-slate-300 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </RoleGate>
                         </td>
                       </tr>
                     ))}
@@ -607,9 +612,11 @@ export default function SellerDashboardPage() {
                   Total paid out: <span className="font-semibold text-brand-green">${totalPaidOut.toFixed(2)}</span>
                 </p>
               </div>
-              <Button onClick={() => setShowPayoutDialog(true)} className="bg-coral hover:bg-coral/90 text-white gap-2" size="sm">
-                <Plus className="h-3.5 w-3.5" /> Record Payout
-              </Button>
+              <RoleGate roles={['admin', 'editor']}>
+                <Button onClick={() => setShowPayoutDialog(true)} className="bg-coral hover:bg-coral/90 text-white gap-2" size="sm">
+                  <Plus className="h-3.5 w-3.5" /> Record Payout
+                </Button>
+              </RoleGate>
             </div>
 
             {profile.payouts.length === 0 ? (
@@ -659,28 +666,30 @@ export default function SellerDashboardPage() {
           <div className="bg-white dark:bg-navy-600 rounded-xl border border-slate-200 dark:border-navy-500 p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-navy-500 dark:text-white">Performance Signals</h3>
-              {!editingPerf ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    const p = profile.performance
-                    setPerfOrders(String(p.estimatedOrders))
-                    setPerfResponse(String(p.responseRate))
-                    setPerfReturn(String(p.returnRate))
-                    setPerfRating(p.avgRating ? String(p.avgRating) : '')
-                    setPerfReviews(String(p.reviewCount))
-                    setEditingPerf(true)
-                  }}
-                >
-                  Edit Signals
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => setEditingPerf(false)}>Cancel</Button>
-                  <Button size="sm" onClick={savePerformance} className="bg-coral hover:bg-coral/90 text-white">Save</Button>
-                </div>
-              )}
+              <RoleGate roles={['admin', 'editor']}>
+                {!editingPerf ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const p = profile.performance
+                      setPerfOrders(String(p.estimatedOrders))
+                      setPerfResponse(String(p.responseRate))
+                      setPerfReturn(String(p.returnRate))
+                      setPerfRating(p.avgRating ? String(p.avgRating) : '')
+                      setPerfReviews(String(p.reviewCount))
+                      setEditingPerf(true)
+                    }}
+                  >
+                    Edit Signals
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => setEditingPerf(false)}>Cancel</Button>
+                    <Button size="sm" onClick={savePerformance} className="bg-coral hover:bg-coral/90 text-white">Save</Button>
+                  </div>
+                )}
+              </RoleGate>
             </div>
 
             {editingPerf ? (

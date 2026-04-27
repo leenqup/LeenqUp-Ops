@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RoleGate } from '@/components/role-gate'
 import {
   Dialog,
   DialogContent,
@@ -291,14 +292,16 @@ function SlideOver({
             <h2 className="text-base font-semibold text-navy dark:text-white truncate">{form.title}</h2>
           )}
           <div className="flex items-center gap-2 ml-3 shrink-0">
-            {editing ? (
-              <>
-                <Button size="sm" onClick={handleSave}>Save</Button>
-                <Button size="sm" variant="secondary" onClick={() => { setForm({ ...script }); setEditing(false) }}>Cancel</Button>
-              </>
-            ) : (
-              <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>Edit</Button>
-            )}
+            <RoleGate roles={['admin', 'editor']}>
+              {editing ? (
+                <>
+                  <Button size="sm" onClick={handleSave}>Save</Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setForm({ ...script }); setEditing(false) }}>Cancel</Button>
+                </>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>Edit</Button>
+              )}
+            </RoleGate>
             <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-navy-600">
               <X className="h-4 w-4" />
             </button>
@@ -376,14 +379,16 @@ function SlideOver({
 
         {/* Footer actions */}
         <div className="px-5 py-3 border-t border-gray-200 dark:border-navy-600 flex gap-2">
-          <Button
-            variant="secondary"
-            className="flex-1"
-            onClick={() => setLinkOpen(true)}
-          >
-            <Link2 className="h-4 w-4" />
-            Link to Merchant
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setLinkOpen(true)}
+            >
+              <Link2 className="h-4 w-4" />
+              Link to Merchant
+            </Button>
+          </RoleGate>
           <Button
             variant="secondary"
             onClick={handleCopy}
@@ -633,10 +638,12 @@ export default function ScriptsPage() {
               <Download className="h-4 w-4" />
               Export CSV
             </Button>
-            <Button onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Script
-            </Button>
+            <RoleGate roles={['admin', 'editor']}>
+              <Button onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Script
+              </Button>
+            </RoleGate>
           </div>
         </div>
 

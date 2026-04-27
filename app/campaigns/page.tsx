@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/toaster'
 import { Breadcrumb } from '@/components/breadcrumb'
+import { RoleGate } from '@/components/role-gate'
 import { getCampaigns, upsertCampaign, getPosts, initializeStorage } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 import type { Campaign, CampaignPhase, CampaignStatus, Post } from '@/types'
@@ -443,14 +444,16 @@ function SlideOver({ campaign, allPosts, onClose, onEdit, onCampaignUpdate }: Sl
                               )}
                             </div>
                           ) : (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-7 text-xs"
-                              onClick={() => setMarkingPostId(isMarkingThis ? null : postId)}
-                            >
-                              {isMarkingThis ? 'Cancel' : 'Mark as Posted'}
-                            </Button>
+                            <RoleGate roles={['admin', 'editor']}>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-7 text-xs"
+                                onClick={() => setMarkingPostId(isMarkingThis ? null : postId)}
+                              >
+                                {isMarkingThis ? 'Cancel' : 'Mark as Posted'}
+                              </Button>
+                            </RoleGate>
                           )}
                         </div>
                       </div>
@@ -611,13 +614,15 @@ function CampaignCard({ campaign, onViewDetails, onActivate }: CampaignCardProps
         <Button variant="secondary" size="sm" onClick={() => onViewDetails(campaign)}>
           View Details
         </Button>
-        <Button
-          size="sm"
-          disabled={locked}
-          onClick={() => onActivate(campaign)}
-        >
-          Mark Active
-        </Button>
+        <RoleGate roles={['admin', 'editor']}>
+          <Button
+            size="sm"
+            disabled={locked}
+            onClick={() => onActivate(campaign)}
+          >
+            Mark Active
+          </Button>
+        </RoleGate>
       </div>
     </Card>
   )
@@ -678,10 +683,12 @@ export default function CampaignsPage() {
           <h1 className="text-2xl font-bold text-navy">Campaigns</h1>
           <p className="text-sm text-slate-500 mt-0.5">Manage and deploy campaign bundles by phase</p>
         </div>
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Add Campaign
-        </Button>
+        <RoleGate roles={['admin', 'editor']}>
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Campaign
+          </Button>
+        </RoleGate>
       </div>
 
       {/* Phase Tabs */}
@@ -718,10 +725,12 @@ export default function CampaignsPage() {
             {byPhase(phase).length === 0 ? (
               <div className="text-center py-16 text-slate-400">
                 <p className="text-sm">No campaigns in this phase yet.</p>
-                <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAddOpen(true)}>
-                  <Plus className="h-3.5 w-3.5" />
-                  Add Campaign
-                </Button>
+                <RoleGate roles={['admin', 'editor']}>
+                  <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAddOpen(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Campaign
+                  </Button>
+                </RoleGate>
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { RoleGate } from '@/components/role-gate'
 import {
   getDeals,
   upsertDeal,
@@ -402,9 +403,11 @@ function DealSlideOver({
                 className="h-8 text-xs flex-1"
                 onKeyDown={e => e.key === 'Enter' && addActivity()}
               />
-              <Button size="sm" onClick={addActivity} disabled={!newActivity.trim()} className="h-8 px-2 bg-coral hover:bg-coral/90 text-white">
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
+              <RoleGate roles={['admin', 'editor']}>
+                <Button size="sm" onClick={addActivity} disabled={!newActivity.trim()} className="h-8 px-2 bg-coral hover:bg-coral/90 text-white">
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              </RoleGate>
             </div>
           </div>
 
@@ -442,14 +445,16 @@ function DealSlideOver({
       {/* Footer */}
       <div className="flex gap-2 p-4 border-t border-slate-200 dark:border-navy-500">
         <Button variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
-        <Button onClick={handleSave} className="flex-1 bg-coral hover:bg-coral/90 text-white">Save</Button>
-        <Button
-          variant="secondary"
-          onClick={() => { onDelete(local.id); onClose() }}
-          className="text-red-600 border-red-200 hover:bg-red-50"
-        >
-          Delete
-        </Button>
+        <RoleGate roles={['admin', 'editor']}>
+          <Button onClick={handleSave} className="flex-1 bg-coral hover:bg-coral/90 text-white">Save</Button>
+          <Button
+            variant="secondary"
+            onClick={() => { onDelete(local.id); onClose() }}
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            Delete
+          </Button>
+        </RoleGate>
       </div>
     </div>
   )
@@ -617,18 +622,20 @@ export default function CRMPage() {
               <Building2 className="h-4 w-4" />
               Accounts
             </Button>
-            <Button
-              variant="secondary"
-              onClick={importFromMerchants}
-              className="gap-2 text-sm"
-            >
-              <Zap className="h-4 w-4 text-coral" />
-              Import from Merchants
-            </Button>
-            <Button onClick={() => setShowNewDeal(true)} className="bg-coral hover:bg-coral/90 text-white gap-2">
-              <Plus className="h-4 w-4" />
-              New Deal
-            </Button>
+            <RoleGate roles={['admin', 'editor']}>
+              <Button
+                variant="secondary"
+                onClick={importFromMerchants}
+                className="gap-2 text-sm"
+              >
+                <Zap className="h-4 w-4 text-coral" />
+                Import from Merchants
+              </Button>
+              <Button onClick={() => setShowNewDeal(true)} className="bg-coral hover:bg-coral/90 text-white gap-2">
+                <Plus className="h-4 w-4" />
+                New Deal
+              </Button>
+            </RoleGate>
           </div>
         </div>
 
@@ -765,10 +772,12 @@ export default function CRMPage() {
                 <p className="text-sm text-slate-400 mb-4">
                   Create deals manually or import from merchants with &quot;interested&quot; / &quot;signed-up&quot; status.
                 </p>
-                <Button onClick={importFromMerchants} variant="secondary" className="gap-2">
-                  <Zap className="h-4 w-4 text-coral" />
-                  Import from Merchants
-                </Button>
+                <RoleGate roles={['admin', 'editor']}>
+                  <Button onClick={importFromMerchants} variant="secondary" className="gap-2">
+                    <Zap className="h-4 w-4 text-coral" />
+                    Import from Merchants
+                  </Button>
+                </RoleGate>
               </div>
             )}
           </TabsContent>

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Printer, Download, CheckCircle2 } from 'lucide-
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
+import { RoleGate } from '@/components/role-gate'
 import { getSOPs, logSOPCompletion, isSOPCompletedToday, isSOPCompletedThisWeek } from '@/lib/storage'
 import { cn } from '@/lib/utils'
 import type { SOP, SOPFrequency } from '@/types'
@@ -194,14 +195,16 @@ function SOPCard({ sop, isCompleted, onMarkComplete }: SOPCardProps) {
                     {completedLabel}
                   </span>
                 ) : (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => onMarkComplete(sop.id)}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Mark Complete
-                  </Button>
+                  <RoleGate roles={['admin', 'editor']}>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => onMarkComplete(sop.id)}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Mark Complete
+                    </Button>
+                  </RoleGate>
                 )
               )}
             </div>

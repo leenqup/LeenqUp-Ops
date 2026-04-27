@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/toaster'
 import { Breadcrumb } from '@/components/breadcrumb'
+import { RoleGate } from '@/components/role-gate'
 import {
   getSequences,
   upsertSequence,
@@ -216,21 +217,25 @@ function EmailDetailModal({
 
         <DialogFooter className="gap-2">
           {editing ? (
-            <>
+            <RoleGate roles={['admin', 'editor']}>
               <Button variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
               <Button onClick={handleSave}>Save Changes</Button>
-            </>
+            </RoleGate>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                className="text-red-500 hover:text-red-600 mr-auto"
-                onClick={() => { onDelete(email.position); onClose() }}
-              >
-                Delete
-              </Button>
+              <RoleGate roles={['admin', 'editor']}>
+                <Button
+                  variant="ghost"
+                  className="text-red-500 hover:text-red-600 mr-auto"
+                  onClick={() => { onDelete(email.position); onClose() }}
+                >
+                  Delete
+                </Button>
+              </RoleGate>
               <Button variant="secondary" onClick={onClose}>Close</Button>
-              <Button onClick={() => setEditing(true)}>Edit</Button>
+              <RoleGate roles={['admin', 'editor']}>
+                <Button onClick={() => setEditing(true)}>Edit</Button>
+              </RoleGate>
             </>
           )}
         </DialogFooter>
@@ -537,47 +542,49 @@ function SequenceCard({
 
           {/* Actions row */}
           <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-gray-100 dark:border-navy-600">
-            <Button
-              size="sm"
-              variant={brevoEnabled ? (isEnrolling ? 'secondary' : 'default') : 'secondary'}
-              disabled={!brevoEnabled}
-              onClick={() => isEnrolling ? onEnrollClose() : onEnrollClick(sequence.id)}
-              title={brevoEnabled ? 'Enroll a contact in this Brevo sequence' : 'Configure Brevo API key in Settings'}
-            >
-              {isEnrolling ? (
-                <>
-                  <X className="h-3 w-3" />
-                  Cancel Enroll
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-3 w-3" />
-                  Enroll in Brevo
-                </>
-              )}
-            </Button>
-
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-400">Status:</span>
-              <Select
-                value={sequence.status}
-                onValueChange={v => onStatusChange(sequence.id, v as SequenceStatus)}
+            <RoleGate roles={['admin', 'editor']}>
+              <Button
+                size="sm"
+                variant={brevoEnabled ? (isEnrolling ? 'secondary' : 'default') : 'secondary'}
+                disabled={!brevoEnabled}
+                onClick={() => isEnrolling ? onEnrollClose() : onEnrollClick(sequence.id)}
+                title={brevoEnabled ? 'Enroll a contact in this Brevo sequence' : 'Configure Brevo API key in Settings'}
               >
-                <SelectTrigger className="h-7 text-xs w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ALL_STATUSES.map(s => (
-                    <SelectItem key={s} value={s}>{formatLabel(s)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {isEnrolling ? (
+                  <>
+                    <X className="h-3 w-3" />
+                    Cancel Enroll
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-3 w-3" />
+                    Enroll in Brevo
+                  </>
+                )}
+              </Button>
 
-            <Button size="sm" variant="secondary" onClick={() => setAddEmailOpen(true)}>
-              <Plus className="h-3 w-3" />
-              Add Email
-            </Button>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-400">Status:</span>
+                <Select
+                  value={sequence.status}
+                  onValueChange={v => onStatusChange(sequence.id, v as SequenceStatus)}
+                >
+                  <SelectTrigger className="h-7 text-xs w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ALL_STATUSES.map(s => (
+                      <SelectItem key={s} value={s}>{formatLabel(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button size="sm" variant="secondary" onClick={() => setAddEmailOpen(true)}>
+                <Plus className="h-3 w-3" />
+                Add Email
+              </Button>
+            </RoleGate>
 
             <Button size="sm" variant="secondary" onClick={handleExport}>
               <Download className="h-3 w-3" />
@@ -793,10 +800,12 @@ export default function SequencesPage() {
               )}
             </p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Sequence
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add Sequence
+            </Button>
+          </RoleGate>
         </div>
 
         {/* Sequences list */}
@@ -804,10 +813,12 @@ export default function SequencesPage() {
           <div className="text-center py-20 text-slate-400 space-y-2">
             <Mail className="h-10 w-10 mx-auto opacity-30" />
             <p className="text-sm">No sequences yet. Create your first one.</p>
-            <Button variant="secondary" size="sm" onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Add Sequence
-            </Button>
+            <RoleGate roles={['admin', 'editor']}>
+              <Button variant="secondary" size="sm" onClick={() => setAddOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Sequence
+              </Button>
+            </RoleGate>
           </div>
         ) : (
           <div className="space-y-4">

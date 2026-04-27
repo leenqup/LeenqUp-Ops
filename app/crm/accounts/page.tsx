@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RoleGate } from '@/components/role-gate'
 import {
   Dialog,
   DialogContent,
@@ -200,10 +201,12 @@ export default function AccountsPage() {
             <p className="text-xs text-slate-500">{accounts.length} company accounts</p>
           </div>
         </div>
-        <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
-          <Plus className="h-4 w-4" />
-          New Account
-        </Button>
+        <RoleGate roles={['admin', 'editor']}>
+          <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
+            <Plus className="h-4 w-4" />
+            New Account
+          </Button>
+        </RoleGate>
       </div>
 
       {/* Duplicate Detection Panel */}
@@ -245,10 +248,12 @@ export default function AccountsPage() {
           <Building2 className="h-10 w-10 text-slate-200 mx-auto mb-3" />
           <h3 className="font-semibold text-slate-600 dark:text-slate-300 mb-2">No accounts yet</h3>
           <p className="text-sm text-slate-400 mb-4">Group merchants by parent company or organization.</p>
-          <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
-            <Plus className="h-4 w-4" />
-            New Account
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button onClick={openNewDialog} className="bg-coral hover:bg-coral/90 text-white gap-2">
+              <Plus className="h-4 w-4" />
+              New Account
+            </Button>
+          </RoleGate>
         </div>
       ) : (
         <div className="space-y-3">
@@ -287,19 +292,21 @@ export default function AccountsPage() {
                       <p className="text-xs text-slate-500 mt-0.5 truncate">{account.notes}</p>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => openEditDialog(account)} className="text-xs h-7">
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => { deleteMerchantAccount(account.id); reload() }}
-                      className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
-                    >
-                      Delete
-                    </Button>
-                  </div>
+                  <RoleGate roles={['admin', 'editor']}>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="secondary" onClick={() => openEditDialog(account)} className="text-xs h-7">
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => { deleteMerchantAccount(account.id); reload() }}
+                        className="text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </RoleGate>
                 </div>
 
                 {/* Expanded merchant rows */}

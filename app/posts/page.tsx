@@ -43,6 +43,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { toast } from '@/components/ui/toaster'
 import { Breadcrumb } from '@/components/breadcrumb'
+import { RoleGate } from '@/components/role-gate'
 import {
   getPosts,
   upsertPost,
@@ -536,11 +537,13 @@ function SlideOver({ post, onClose, onUpdate, onDelete, bufferConfigured }: Slid
             <Button size="icon-sm" variant="secondary" onClick={handleCopy} title="Copy body">
               {copied ? <Check className="h-3.5 w-3.5 text-brand-green" /> : <Copy className="h-3.5 w-3.5" />}
             </Button>
-            {!editing ? (
-              <Button size="icon-sm" variant="secondary" onClick={() => setEditing(true)} title="Edit post">
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            ) : null}
+            <RoleGate roles={['admin', 'editor']}>
+              {!editing ? (
+                <Button size="icon-sm" variant="secondary" onClick={() => setEditing(true)} title="Edit post">
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
+            </RoleGate>
             <Button size="icon-sm" variant="ghost" onClick={onClose} title="Close">
               <X className="h-4 w-4" />
             </Button>
@@ -694,33 +697,35 @@ function SlideOver({ post, onClose, onUpdate, onDelete, bufferConfigured }: Slid
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-gray-100 dark:border-navy-500">
-          {confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-red-600 flex-1">Delete this post?</p>
-              <Button size="sm" variant="destructive" onClick={handleDelete}>Yes, delete</Button>
-              <Button size="sm" variant="secondary" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-            </div>
-          ) : editing ? (
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleSave} className="flex-1">Save changes</Button>
-              <Button size="sm" variant="secondary" onClick={() => { setEditing(false); setDraft({ ...post }) }}>
-                Cancel
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => setEditing(true)} variant="secondary" className="flex-1">
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
+          <RoleGate roles={['admin', 'editor']}>
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-red-600 flex-1">Delete this post?</p>
+                <Button size="sm" variant="destructive" onClick={handleDelete}>Yes, delete</Button>
+                <Button size="sm" variant="secondary" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+              </div>
+            ) : editing ? (
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleSave} className="flex-1">Save changes</Button>
+                <Button size="sm" variant="secondary" onClick={() => { setEditing(false); setDraft({ ...post }) }}>
+                  Cancel
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => setEditing(true)} variant="secondary" className="flex-1">
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </RoleGate>
         </div>
       </div>
     </>
@@ -1214,10 +1219,12 @@ export default function PostsPage() {
               {filteredPosts.length} of {allPosts.length} posts
             </p>
           </div>
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="h-4 w-4" />
-            Add Post
-          </Button>
+          <RoleGate roles={['admin', 'editor']}>
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4" />
+              Add Post
+            </Button>
+          </RoleGate>
         </div>
 
         {/* Filter bar */}
@@ -1348,10 +1355,12 @@ export default function PostsPage() {
                   {hasActiveFilters ? 'Try adjusting your filters.' : 'Add your first post to get started.'}
                 </p>
                 {!hasActiveFilters && (
-                  <Button className="mt-4" onClick={() => setShowAddDialog(true)}>
-                    <Plus className="h-4 w-4" />
-                    Add Post
-                  </Button>
+                  <RoleGate roles={['admin', 'editor']}>
+                    <Button className="mt-4" onClick={() => setShowAddDialog(true)}>
+                      <Plus className="h-4 w-4" />
+                      Add Post
+                    </Button>
+                  </RoleGate>
                 )}
               </div>
             ) : (

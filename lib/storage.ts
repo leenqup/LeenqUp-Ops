@@ -7,6 +7,7 @@ import type {
   Goal,
   ExpenseEntry, RevenueEntry, CashPosition, InvestorKPIs,
   TeamMember, ActivityEntry, ActivityAction, ActivityEntityType,
+  SavedView, ColId,
 } from '@/types'
 import { kvSet, kvSetBatch, kvGetAll, upsertMerchantDB, deleteMerchantDB } from '@/lib/supabase'
 import { posts as seedPosts } from '@/data/posts'
@@ -51,6 +52,9 @@ const KEYS = {
   activityFeed: 'leenqup_activity_feed',
   // Goals (v6)
   goals: 'leenqup_goals',
+  // Saved Views & Column Prefs (v7)
+  savedViews: 'leenqup_saved_views',
+  merchantColumns: 'leenqup_merchant_columns',
 }
 
 function getItem<T>(key: string): T | null {
@@ -67,7 +71,8 @@ function getItem<T>(key: string): T | null {
 // Keys that should NOT be synced to Supabase (device-local only).
 // Settings contains API keys, service account credentials, and tokens —
 // all of which are personal/sensitive and must never leave the local device.
-const LOCAL_ONLY_KEYS = new Set([KEYS.settings, KEYS.seeded])
+// savedViews and merchantColumns are UI preferences — device-local only.
+const LOCAL_ONLY_KEYS = new Set([KEYS.settings, KEYS.seeded, KEYS.savedViews, KEYS.merchantColumns])
 
 function setItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return
@@ -82,7 +87,7 @@ function setItem<T>(key: string, value: T): void {
 
 // Schema version — bump this whenever new localStorage keys are added.
 // On load, migrate() backfills any missing keys so existing users aren't left blank.
-const SCHEMA_VERSION = '6'
+const SCHEMA_VERSION = '7'
 const SCHEMA_VERSION_KEY = 'leenqup_schema_version'
 
 const NEW_KEYS_V2 = [
@@ -135,6 +140,20 @@ function migrate(): void {
   // v5: Seed activity feed key if missing (empty array — feed populates from user actions)
   if (!localStorage.getItem(KEYS.activityFeed)) {
     setItem(KEYS.activityFeed, [])
+  }
+
+  // v7: Seed saved views (3 system views) and merchant column prefs (empty = all visible)
+  if (!localStorage.getItem(KEYS.savedViews)) {
+    const now = new Date().toISOString()
+    const systemViews: SavedView[] = [
+      { id: 'view_all', name: 'All Merchants', emoji: '🏪', filters: {}, isSystem: true, createdAt: now },
+      { id: 'view_hot', name: 'Hot Leads', emoji: '🔥', filters: { filterStatus: 'interested', filterTier: '1' }, isSystem: true, createdAt: now },
+      { id: 'view_signed', name: 'Signed Up', emoji: '✅', filters: { filterStatus: 'signed-up' }, isSystem: true, createdAt: now },
+    ]
+    localStorage.setItem(KEYS.savedViews, JSON.stringify(systemViews))
+  }
+  if (!localStorage.getItem(KEYS.merchantColumns)) {
+    localStorage.setItem(KEYS.merchantColumns, JSON.stringify([]))
   }
 
   localStorage.setItem(SCHEMA_VERSION_KEY, SCHEMA_VERSION)
@@ -495,6 +514,34 @@ export function upsertGoal(goal: Goal): void {
 }
 export function deleteGoal(id: string): void {
   saveGoals(getGoals().filter(g => g.id !== id))
+}
+
+// ── Saved Views (v7) ─────────────────────────────────────────
+export function getSavedViews(): SavedView[] {
+  return getItem<SavedView[]>(KEYS.savedViews) ?? []
+}
+
+export function upsertSavedView(view: SavedView): void {
+  const all = getSavedViews()
+  const idx = all.findIndex(v => v.id === view.id)
+  if (idx >= 0) all[idx] = view; else all.push(view)
+  localStorage.setItem(KEYS.savedViews, JSON.stringify(all))
+}
+
+export function deleteSavedView(id: string): void {
+  // System views cannot be deleted
+  const all = getSavedViews()
+  const updated = all.filter(v => v.id !== id || v.isSystem)
+  localStorage.setItem(KEYS.savedViews, JSON.stringify(updated))
+}
+
+// ── Merchant Column Prefs (v7) ────────────────────────────────
+export function getHiddenColumns(): ColId[] {
+  return getItem<ColId[]>(KEYS.merchantColumns) ?? []
+}
+
+export function setHiddenColumns(cols: ColId[]): void {
+  localStorage.setItem(KEYS.merchantColumns, JSON.stringify(cols))
 }
 
 // SOP Completions

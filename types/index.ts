@@ -187,6 +187,7 @@ export interface Merchant {
   lastContactDate?: string
   contactChannel?: string
   assignedScript?: string
+  assignedTo?: string            // user email of the team member assigned to this merchant
   outreachLog?: OutreachLog[]
   tags: string[]
   priority: Priority
@@ -625,6 +626,7 @@ export interface CashPosition {
 
 // ─── Investor KPIs (manually entered) ────────────────────────────────────────
 export interface InvestorKPIs {
+
   month: string // 'YYYY-MM'
   activeSellers?: number
   activeBuyers?: number
@@ -634,3 +636,36 @@ export interface InvestorKPIs {
   notes?: string
   updatedAt: string
 }
+
+// ============================================================
+// Merchant UX — Saved Views & Column Customization
+// ============================================================
+
+/** Snapshot of all active filter states (key → value as string). */
+export type FilterSnapshot = Record<string, string>
+
+/** A named, saveable filter configuration for the merchant directory. */
+export interface SavedView {
+  id: string
+  name: string
+  emoji: string
+  filters: FilterSnapshot
+  isSystem?: boolean  // system views cannot be deleted
+  createdAt: string
+}
+
+/** Toggleable column IDs in the merchant table. 'name' and 'actions' are always visible. */
+export type ColId =
+  | 'name'
+  | 'segment'
+  | 'category'
+  | 'city'
+  | 'country'
+  | 'digital'
+  | 'status'
+  | 'priority'
+  | 'lastContact'
+  | 'completeness'
+  | 'health'
+  | 'assignedTo'
+  | 'actions'

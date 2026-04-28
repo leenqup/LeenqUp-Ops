@@ -36,6 +36,9 @@ import {
   MapPin,
   Store,
   CheckSquare,
+  Columns3,
+  SlidersHorizontal,
+  UserCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -61,6 +64,7 @@ import {
 import { toast } from '@/components/ui/toaster'
 import { Breadcrumb } from '@/components/breadcrumb'
 import { RoleGate } from '@/components/role-gate'
+import { useAuth } from '@/components/auth-provider'
 import {
   getMerchants,
   saveMerchants,
@@ -82,6 +86,11 @@ import {
   upsertDemandSignal,
   deleteDemandSignal,
   initializeStorage,
+  getSavedViews,
+  upsertSavedView,
+  deleteSavedView,
+  getHiddenColumns,
+  setHiddenColumns,
 } from '@/lib/storage'
 import { supabase, mapMerchantRow } from '@/lib/supabase'
 import { computeMerchantHealth } from '@/lib/merchant-health'
@@ -103,6 +112,9 @@ import type {
   TrendDirection,
   Deal,
   DealStage,
+  SavedView,
+  FilterSnapshot,
+  ColId,
 } from '@/types'
 
 // ─── Types & Helpers ──────────────────────────────────────────────────────────
@@ -131,6 +143,30 @@ const SEGMENTS: MerchantSegment[] = [
 ]
 const MATURITY_LEVELS: MaturityLevel[] = ['new-emerging', 'established', 'well-known']
 const TIERS: MerchantTier[] = [1, 2, 3]
+
+// ─── Pipeline Stage Groups ────────────────────────────────────────────────────
+const FORWARD_STAGES: OutreachStatus[] = ['not-contacted', 'contacted', 'responded', 'interested', 'signed-up']
+const EXIT_STAGES: OutreachStatus[] = ['declined', 'not-a-fit']
+
+// ─── Column Definitions ───────────────────────────────────────────────────────
+const ALL_COLUMNS: { id: ColId; label: string }[] = [
+  { id: 'name', label: 'Name' },
+  { id: 'segment', label: 'Segment' },
+  { id: 'category', label: 'Category' },
+  { id: 'city', label: 'City' },
+  { id: 'country', label: 'Country' },
+  { id: 'digital', label: 'Digital' },
+  { id: 'status', label: 'Status' },
+  { id: 'priority', label: 'Priority' },
+  { id: 'lastContact', label: 'Last Contact' },
+  { id: 'assignedTo', label: 'Assigned To' },
+  { id: 'completeness', label: 'Completeness' },
+  { id: 'health', label: 'Health' },
+  { id: 'actions', label: 'Actions' },
+]
+const ALWAYS_VISIBLE: ColId[] = ['name', 'actions']
+
+const SAVE_VIEW_EMOJIS = ['🏪', '🔥', '⭐', '📋', '🎯', '🚀', '💡', '📊']
 
 const TIER_LABELS: Record<MerchantTier, string> = {
   1: 'Tier 1 — Highest Priority',
@@ -268,26 +304,85 @@ function emptyMerchant(): Merchant {
 
 // ─── Pipeline Funnel ──────────────────────────────────────────────────────────
 
-function PipelineFunnel({ merchants }: { merchants: Merchant[] }) {
+function PipelineFunnel({
+  merchants,
+  activeStage,
+  onStageClick,
+}: {
+  merchants: Merchant[]
+  activeStage: string
+  onStageClick: (stage: OutreachStatus | null) => void
+}) {
   const counts = OUTREACH_STATUSES.reduce((acc, s) => {
     acc[s] = merchants.filter(m => m.outreachStatus === s).length
     return acc
   }, {} as Record<OutreachStatus, number>)
 
+  const stageLabel: Record<OutreachStatus, string> = {
+    'not-contacted': 'Not Contacted',
+    'contacted': 'Contacted',
+    'responded': 'Responded',
+    'interested': 'Interested',
+    'signed-up': 'Signed Up',
+    'declined': 'Declined',
+    'not-a-fit': 'Not a Fit',
+  }
+
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
-      {OUTREACH_STATUSES.map(stage => (
-        <div
-          key={stage}
-          className={cn(
-            'flex flex-col items-center justify-center rounded-full px-5 py-3 min-w-[110px] flex-1 shadow-sm',
-            outreachFunnelColor(stage),
-          )}
-        >
-          <span className="text-2xl font-bold leading-none">{counts[stage]}</span>
-          <span className="text-xs font-medium mt-1 text-center leading-tight">{labelOf(stage)}</span>
-        </div>
-      ))}
+    <div className="flex items-stretch gap-0 mb-6 flex-wrap">
+      {/* Forward funnel — chevron chain */}
+      <div className="flex items-stretch flex-1 min-w-0 gap-0">
+        {FORWARD_STAGES.map((stage, i) => {
+          const isActive = activeStage === stage
+          return (
+            <button
+              key={stage}
+              onClick={() => onStageClick(isActive ? null : stage)}
+              className={cn(
+                'flex-1 flex flex-col items-center justify-center py-3 px-2 text-center transition-all border-y border-l first:rounded-l-xl first:border-l last:border-r',
+                isActive
+                  ? 'bg-coral text-white border-coral shadow-sm'
+                  : cn('bg-white dark:bg-navy-600 border-slate-200 dark:border-navy-500 hover:bg-slate-50 dark:hover:bg-navy-500', outreachFunnelColor(stage)),
+              )}
+            >
+              <span className={cn('text-xl font-bold leading-none', isActive ? 'text-white' : '')}>{counts[stage]}</span>
+              <span className={cn('text-[10px] font-medium mt-1 leading-tight hidden sm:block', isActive ? 'text-white/90' : '')}>
+                {stageLabel[stage]}
+              </span>
+              {i < FORWARD_STAGES.length - 1 && (
+                <ChevronRight className={cn('absolute right-0 h-4 w-4 translate-x-1/2 z-10 hidden sm:block',
+                  isActive ? 'text-coral' : 'text-slate-300 dark:text-navy-400'
+                )} />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Divider */}
+      <div className="w-px bg-slate-200 dark:bg-navy-500 mx-2 hidden sm:block" />
+
+      {/* Exit stages */}
+      <div className="flex items-stretch gap-1">
+        {EXIT_STAGES.map(stage => {
+          const isActive = activeStage === stage
+          return (
+            <button
+              key={stage}
+              onClick={() => onStageClick(isActive ? null : stage)}
+              className={cn(
+                'flex flex-col items-center justify-center py-3 px-3 rounded-xl border transition-all',
+                isActive
+                  ? 'bg-slate-700 text-white border-slate-700 shadow-sm'
+                  : 'bg-slate-50 dark:bg-navy-700 border-slate-200 dark:border-navy-500 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-500',
+              )}
+            >
+              <span className="text-xl font-bold leading-none">{counts[stage]}</span>
+              <span className="text-[10px] font-medium mt-1 leading-tight hidden sm:block">{stageLabel[stage]}</span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -415,6 +510,10 @@ function MerchantFormDialog({ open, onClose, initial, onSave }: MerchantFormDial
           <div>
             <Label>Email</Label>
             <Input value={form.email ?? ''} onChange={e => set('email', e.target.value)} placeholder="email@example.com" className="mt-1" />
+          </div>
+          <div>
+            <Label>Assigned To</Label>
+            <Input value={form.assignedTo ?? ''} onChange={e => set('assignedTo', e.target.value)} placeholder="team@example.com" className="mt-1" />
           </div>
           <div className="col-span-2">
             <Label>Notes</Label>
@@ -1483,6 +1582,7 @@ function BulkOutreachTool({ merchants, scripts, onClose }: BulkOutreachProps) {
 
 export default function MerchantsPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [merchants, setMerchants] = useState<Merchant[]>([])
   const [scripts, setScripts] = useState<Script[]>([])
   const [search, setSearch] = useState('')
@@ -1499,6 +1599,19 @@ export default function MerchantsPage() {
   const [filterCountry, setFilterCountry] = useState('all')
   const [filterContactMethod, setFilterContactMethod] = useState('all')
   const [filterHealth, setFilterHealth] = useState<'all' | 'healthy' | 'at-risk' | 'critical'>('all')
+  const [filterAssignedTo, setFilterAssignedTo] = useState('')
+  // Advanced filter panel toggle
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  // Saved views
+  const [savedViews, setSavedViews] = useState<SavedView[]>([])
+  const [activeViewId, setActiveViewId] = useState<string>('view_all')
+  const [showSaveViewDialog, setShowSaveViewDialog] = useState(false)
+  const [saveViewName, setSaveViewName] = useState('')
+  const [saveViewEmoji, setSaveViewEmoji] = useState('🏪')
+  // Column customization
+  const [hiddenCols, setHiddenColsState] = useState<ColId[]>([])
+  const [showColMenu, setShowColMenu] = useState(false)
+  const colMenuRef = useRef<HTMLDivElement>(null)
   const [viewMode, setViewMode] = useState<'table' | 'tier'>('table')
   // Virtual pagination — how many filtered rows to display (load more on scroll)
   const [displayCount, setDisplayCount] = useState(50)
@@ -1551,6 +1664,8 @@ export default function MerchantsPage() {
     setBenchmarks(getPriceBenchmarks())
     setTrends(getCategoryTrends())
     setDemandSignals(getDemandSignals())
+    setSavedViews(getSavedViews())
+    setHiddenColsState(getHiddenColumns())
 
     // Supabase Realtime — reflect changes made by other team members instantly
     const channel = supabase
@@ -1642,6 +1757,7 @@ export default function MerchantsPage() {
           if (filterHealth === 'at-risk' && (score < 30 || score >= 70)) return false
           if (filterHealth === 'critical' && score >= 30) return false
         }
+        if (filterAssignedTo && m.assignedTo !== filterAssignedTo) return false
         return true
       })
       .sort((a, b) => {
@@ -1651,7 +1767,7 @@ export default function MerchantsPage() {
       }),
     [merchants, search, filterSegment, filterCategory, filterStatus, filterPriority, filterDigital,
       filterTier, filterLibdelivery, filterShipsToLiberia, filterCounty, filterCountry, filterSource,
-      filterContactMethod, filterHealth, sortKey, sortDir]
+      filterContactMethod, filterHealth, filterAssignedTo, sortKey, sortDir]
   )
 
   // Paginated slice — what's actually rendered in the table
@@ -1661,7 +1777,7 @@ export default function MerchantsPage() {
   useEffect(() => { setDisplayCount(50) }, [
     search, filterSegment, filterCategory, filterStatus, filterPriority, filterDigital,
     filterTier, filterLibdelivery, filterShipsToLiberia, filterCounty, filterCountry,
-    filterSource, filterContactMethod, filterHealth, sortKey, sortDir,
+    filterSource, filterContactMethod, filterHealth, filterAssignedTo, sortKey, sortDir,
   ])
 
   const handleSort = (key: SortKey) => {
@@ -1742,7 +1858,115 @@ export default function MerchantsPage() {
     setFilterCountry('all')
     setFilterContactMethod('all')
     setFilterHealth('all')
+    setFilterAssignedTo('')
+    setActiveViewId('view_all')
   }
+
+  // Close column menu when clicking outside
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) {
+        setShowColMenu(false)
+      }
+    }
+    if (showColMenu) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showColMenu])
+
+  // ─── Saved Views Helpers ───────────────────────────────────────────────────
+  const captureFilters = (): FilterSnapshot => ({
+    search,
+    filterSegment,
+    filterCategory,
+    filterStatus,
+    filterPriority,
+    filterDigital,
+    filterTier,
+    filterLibdelivery,
+    filterShipsToLiberia,
+    filterCounty,
+    filterSource,
+    filterCountry,
+    filterContactMethod,
+    filterHealth,
+    filterAssignedTo,
+  })
+
+  const applyView = (view: SavedView) => {
+    const f = view.filters
+    setSearch(f.search ?? '')
+    setFilterSegment(f.filterSegment ?? 'all')
+    setFilterCategory(f.filterCategory ?? 'all')
+    setFilterStatus(f.filterStatus ?? 'all')
+    setFilterPriority(f.filterPriority ?? 'all')
+    setFilterDigital(f.filterDigital ?? 'all')
+    setFilterTier(f.filterTier ?? 'all')
+    setFilterLibdelivery(f.filterLibdelivery ?? 'all')
+    setFilterShipsToLiberia(f.filterShipsToLiberia ?? 'all')
+    setFilterCounty(f.filterCounty ?? 'all')
+    setFilterSource(f.filterSource ?? 'all')
+    setFilterCountry(f.filterCountry ?? 'all')
+    setFilterContactMethod(f.filterContactMethod ?? 'all')
+    setFilterHealth((f.filterHealth as typeof filterHealth) ?? 'all')
+    setFilterAssignedTo(f.filterAssignedTo ?? '')
+    setActiveViewId(view.id)
+  }
+
+  const handleSaveView = () => {
+    if (!saveViewName.trim()) return
+    const view: SavedView = {
+      id: `view_${Date.now()}`,
+      name: saveViewName.trim(),
+      emoji: saveViewEmoji,
+      filters: captureFilters(),
+      createdAt: new Date().toISOString(),
+    }
+    upsertSavedView(view)
+    setSavedViews(getSavedViews())
+    setActiveViewId(view.id)
+    setShowSaveViewDialog(false)
+    setSaveViewName('')
+    setSaveViewEmoji('🏪')
+  }
+
+  const handleDeleteView = (id: string) => {
+    deleteSavedView(id)
+    setSavedViews(getSavedViews())
+    if (activeViewId === id) setActiveViewId('view_all')
+  }
+
+  // ─── Column Customization Helpers ─────────────────────────────────────────
+  const toggleColumn = (id: ColId) => {
+    if (ALWAYS_VISIBLE.includes(id)) return
+    const next = hiddenCols.includes(id)
+      ? hiddenCols.filter(c => c !== id)
+      : [...hiddenCols, id]
+    setHiddenColsState(next)
+    setHiddenColumns(next)
+  }
+
+  const visibleCols = useMemo(
+    () => ALL_COLUMNS.filter(c => ALWAYS_VISIBLE.includes(c.id) || !hiddenCols.includes(c.id)),
+    [hiddenCols]
+  )
+
+  // ─── Advanced Filter Count ─────────────────────────────────────────────────
+  const advancedFilterCount = useMemo(() => {
+    let n = 0
+    if (filterSegment !== 'all') n++
+    if (filterPriority !== 'all') n++
+    if (filterDigital !== 'all') n++
+    if (filterLibdelivery !== 'all') n++
+    if (filterShipsToLiberia !== 'all') n++
+    if (filterCounty !== 'all') n++
+    if (filterCountry !== 'all') n++
+    if (filterSource !== 'all') n++
+    if (filterContactMethod !== 'all') n++
+    if (filterHealth !== 'all') n++
+    if (filterAssignedTo) n++
+    return n
+  }, [filterSegment, filterPriority, filterDigital, filterLibdelivery, filterShipsToLiberia,
+    filterCounty, filterCountry, filterSource, filterContactMethod, filterHealth, filterAssignedTo])
 
   // WhatsApp CSV export — downloads name + phone for the currently filtered list
   const handleWhatsAppCSV = () => {
@@ -2239,28 +2463,71 @@ export default function MerchantsPage() {
       {mainTab !== 'directory' ? null : (<>
 
       {/* Pipeline Funnel */}
-      <PipelineFunnel merchants={merchants} />
+      <PipelineFunnel
+        merchants={merchants}
+        activeStage={filterStatus}
+        onStageClick={stage => {
+          setFilterStatus(stage ?? 'all')
+          setActiveViewId('')
+        }}
+      />
+
+      {/* Saved Views Strip */}
+      <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1">
+        {savedViews.map(view => (
+          <div key={view.id} className="flex items-center shrink-0">
+            <button
+              onClick={() => applyView(view)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border',
+                activeViewId === view.id
+                  ? 'bg-coral text-white border-coral shadow-sm'
+                  : 'bg-white dark:bg-navy-600 border-slate-200 dark:border-navy-500 text-slate-600 dark:text-slate-300 hover:border-coral/50 hover:text-coral',
+              )}
+            >
+              <span>{view.emoji}</span>
+              <span className="max-w-[120px] truncate">{view.name}</span>
+            </button>
+            {!view.isSystem && (
+              <button
+                onClick={() => handleDeleteView(view.id)}
+                className="ml-0.5 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-400 transition-colors"
+                title="Remove view"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        ))}
+        <button
+          onClick={() => { setSaveViewName(''); setSaveViewEmoji('🏪'); setShowSaveViewDialog(true) }}
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-dashed border-slate-300 dark:border-navy-500 text-slate-400 hover:border-coral hover:text-coral transition-all"
+        >
+          <Plus className="h-3.5 w-3.5" /> Save View
+        </button>
+      </div>
 
       {/* Filter Bar */}
       <Card className="mb-4">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-2 items-end">
+          {/* Primary filters — always visible */}
+          <div className="flex flex-wrap gap-2 items-center">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search by name or city..."
+                placeholder="Search by name, city, or category..."
                 className="pl-9"
               />
             </div>
 
-            <div className="w-[140px]">
-              <Select value={filterSegment} onValueChange={setFilterSegment}>
-                <SelectTrigger><SelectValue placeholder="Segment" /></SelectTrigger>
+            <div className="w-[160px]">
+              <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setActiveViewId('') }}>
+                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Segments</SelectItem>
-                  {SEGMENTS.map(s => <SelectItem key={s} value={s}>{labelOf(s)}</SelectItem>)}
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {OUTREACH_STATUSES.map(s => <SelectItem key={s} value={s}>{labelOf(s)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -2275,37 +2542,7 @@ export default function MerchantsPage() {
               </Select>
             </div>
 
-            <div className="w-[160px]">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {OUTREACH_STATUSES.map(s => <SelectItem key={s} value={s}>{labelOf(s)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[130px]">
-              <Select value={filterPriority} onValueChange={setFilterPriority}>
-                <SelectTrigger><SelectValue placeholder="Priority" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  {PRIORITIES.map(p => <SelectItem key={p} value={p}>{labelOf(p)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[140px]">
-              <Select value={filterDigital} onValueChange={setFilterDigital}>
-                <SelectTrigger><SelectValue placeholder="Digital" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Digital</SelectItem>
-                  {DIGITAL_PRESENCES.map(d => <SelectItem key={d} value={d}>{labelOf(d)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-[130px]">
+            <div className="w-[120px]">
               <Select value={filterTier} onValueChange={setFilterTier}>
                 <SelectTrigger><SelectValue placeholder="Tier" /></SelectTrigger>
                 <SelectContent>
@@ -2315,110 +2552,217 @@ export default function MerchantsPage() {
               </Select>
             </div>
 
-            {/* Country filter — top-level regional sort */}
-            {countries.length > 1 && (
-              <div className="w-[150px]">
-                <Select value={filterCountry} onValueChange={setFilterCountry}>
-                  <SelectTrigger><SelectValue placeholder="Country" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Countries</SelectItem>
-                    {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* More filters toggle */}
+            <button
+              onClick={() => setShowAdvancedFilters(v => !v)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all',
+                showAdvancedFilters || advancedFilterCount > 0
+                  ? 'bg-coral/10 border-coral/40 text-coral'
+                  : 'border-slate-200 dark:border-navy-500 text-slate-500 hover:border-coral/40 hover:text-coral',
+              )}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
+              {advancedFilterCount > 0 && (
+                <span className="ml-0.5 flex items-center justify-center bg-coral text-white text-[10px] font-bold rounded-full w-4 h-4">
+                  {advancedFilterCount}
+                </span>
+              )}
+            </button>
 
-            <div className="w-[150px]">
-              <Select value={filterLibdelivery} onValueChange={setFilterLibdelivery}>
-                <SelectTrigger><SelectValue placeholder="LIBdelivery" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All LIBdelivery</SelectItem>
-                  <SelectItem value="yes">LIBdelivery Partners</SelectItem>
-                  <SelectItem value="no">Not on LIBdelivery</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center gap-1.5 ml-auto">
+              {(search || filterStatus !== 'all' || filterCategory !== 'all' || filterTier !== 'all' || advancedFilterCount > 0) && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
+                  <X className="h-4 w-4" /> Clear
+                </Button>
+              )}
+              <Button variant="secondary" size="sm" onClick={handleExportCSV} className="shrink-0">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">CSV</span>
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setShowImport(true)} className="shrink-0">
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Import</span>
+              </Button>
             </div>
-
-            <div className="w-[160px]">
-              <Select value={filterShipsToLiberia} onValueChange={setFilterShipsToLiberia}>
-                <SelectTrigger><SelectValue placeholder="Ships to LR" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Shipping</SelectItem>
-                  <SelectItem value="yes">Ships to Liberia</SelectItem>
-                  <SelectItem value="no">Does Not Ship</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {counties.length > 0 && (
-              <div className="w-[150px]">
-                <Select value={filterCounty} onValueChange={setFilterCounty}>
-                  <SelectTrigger><SelectValue placeholder="County" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Counties</SelectItem>
-                    {counties.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="w-[150px]">
-              <Select value={filterSource} onValueChange={setFilterSource}>
-                <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="trueliberia">TrueLiberia Import</SelectItem>
-                  <SelectItem value="research">Hand-Researched</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Contact Method boolean filter */}
-            <div className="w-[160px]">
-              <Select value={filterContactMethod} onValueChange={setFilterContactMethod}>
-                <SelectTrigger><SelectValue placeholder="Contact" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any Contact</SelectItem>
-                  <SelectItem value="has_email">Has Email</SelectItem>
-                  <SelectItem value="has_phone">Has Phone</SelectItem>
-                  <SelectItem value="has_whatsapp">Has WhatsApp</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Health filter */}
-            <div className="w-[160px]">
-              <Select value={filterHealth} onValueChange={v => setFilterHealth(v as typeof filterHealth)}>
-                <SelectTrigger><SelectValue placeholder="Health" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Health</SelectItem>
-                  <SelectItem value="healthy">Healthy (A/B)</SelectItem>
-                  <SelectItem value="at-risk">At Risk (C/D)</SelectItem>
-                  <SelectItem value="critical">Critical (F)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="shrink-0">
-              <X className="h-4 w-4" /> Clear
-            </Button>
-            <Button variant="secondary" size="sm" onClick={handleExportCSV} className="shrink-0">
-              <Download className="h-4 w-4" /> Export CSV
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => setShowImport(true)} className="shrink-0">
-              <Upload className="h-4 w-4" /> Import CSV
-            </Button>
           </div>
+
+          {/* Advanced filters — collapsible */}
+          {showAdvancedFilters && (
+            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-navy-500 flex flex-wrap gap-2">
+              <div className="w-[140px]">
+                <Select value={filterSegment} onValueChange={setFilterSegment}>
+                  <SelectTrigger><SelectValue placeholder="Segment" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Segments</SelectItem>
+                    {SEGMENTS.map(s => <SelectItem key={s} value={s}>{labelOf(s)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[130px]">
+                <Select value={filterPriority} onValueChange={setFilterPriority}>
+                  <SelectTrigger><SelectValue placeholder="Priority" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    {PRIORITIES.map(p => <SelectItem key={p} value={p}>{labelOf(p)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[140px]">
+                <Select value={filterDigital} onValueChange={setFilterDigital}>
+                  <SelectTrigger><SelectValue placeholder="Digital" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Digital</SelectItem>
+                    {DIGITAL_PRESENCES.map(d => <SelectItem key={d} value={d}>{labelOf(d)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {countries.length > 1 && (
+                <div className="w-[150px]">
+                  <Select value={filterCountry} onValueChange={setFilterCountry}>
+                    <SelectTrigger><SelectValue placeholder="Country" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Countries</SelectItem>
+                      {countries.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="w-[150px]">
+                <Select value={filterLibdelivery} onValueChange={setFilterLibdelivery}>
+                  <SelectTrigger><SelectValue placeholder="LIBdelivery" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All LIBdelivery</SelectItem>
+                    <SelectItem value="yes">LIBdelivery Partners</SelectItem>
+                    <SelectItem value="no">Not on LIBdelivery</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[160px]">
+                <Select value={filterShipsToLiberia} onValueChange={setFilterShipsToLiberia}>
+                  <SelectTrigger><SelectValue placeholder="Ships to LR" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Shipping</SelectItem>
+                    <SelectItem value="yes">Ships to Liberia</SelectItem>
+                    <SelectItem value="no">Does Not Ship</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {counties.length > 0 && (
+                <div className="w-[150px]">
+                  <Select value={filterCounty} onValueChange={setFilterCounty}>
+                    <SelectTrigger><SelectValue placeholder="County" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Counties</SelectItem>
+                      {counties.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="w-[150px]">
+                <Select value={filterSource} onValueChange={setFilterSource}>
+                  <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="trueliberia">TrueLiberia Import</SelectItem>
+                    <SelectItem value="research">Hand-Researched</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[160px]">
+                <Select value={filterContactMethod} onValueChange={setFilterContactMethod}>
+                  <SelectTrigger><SelectValue placeholder="Contact" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Any Contact</SelectItem>
+                    <SelectItem value="has_email">Has Email</SelectItem>
+                    <SelectItem value="has_phone">Has Phone</SelectItem>
+                    <SelectItem value="has_whatsapp">Has WhatsApp</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-[160px]">
+                <Select value={filterHealth} onValueChange={v => setFilterHealth(v as typeof filterHealth)}>
+                  <SelectTrigger><SelectValue placeholder="Health" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Health</SelectItem>
+                    <SelectItem value="healthy">Healthy (A/B)</SelectItem>
+                    <SelectItem value="at-risk">At Risk (C/D)</SelectItem>
+                    <SelectItem value="critical">Critical (F)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Assigned To filter */}
+              <div className="w-[180px]">
+                <Select value={filterAssignedTo || '__all__'} onValueChange={v => setFilterAssignedTo(v === '__all__' ? '' : v)}>
+                  <SelectTrigger><SelectValue placeholder="Assigned To" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Anyone</SelectItem>
+                    {user?.email && (
+                      <SelectItem value={user.email}>Assigned to Me</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* View Mode Toggle */}
+      {/* View Mode Toggle + Columns */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs text-slate-500 dark:text-slate-400">
           {allFiltered.length} merchant{allFiltered.length !== 1 ? 's' : ''} matching
           {allFiltered.length > displayCount && ` · showing first ${displayCount}`}
         </p>
-        <div className="flex gap-1 bg-gray-100 dark:bg-navy-500 p-0.5 rounded-lg">
+        <div className="flex items-center gap-2">
+          {/* Columns toggle */}
+          <div className="relative" ref={colMenuRef}>
+            <button
+              onClick={() => setShowColMenu(v => !v)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all',
+                hiddenCols.length > 0
+                  ? 'border-coral/40 text-coral bg-coral/5'
+                  : 'border-slate-200 dark:border-navy-500 text-slate-500 hover:text-navy dark:hover:text-white',
+              )}
+            >
+              <Columns3 className="h-3.5 w-3.5" />
+              Columns
+              {hiddenCols.length > 0 && (
+                <span className="text-[10px] bg-coral text-white rounded-full px-1">{hiddenCols.length}</span>
+              )}
+            </button>
+            {showColMenu && (
+              <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-navy-600 rounded-xl border border-slate-200 dark:border-navy-500 shadow-lg p-2 min-w-[180px]">
+                {ALL_COLUMNS.filter(c => !ALWAYS_VISIBLE.includes(c.id)).map(col => (
+                  <label
+                    key={col.id}
+                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-navy-500 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!hiddenCols.includes(col.id)}
+                      onChange={() => toggleColumn(col.id)}
+                      className="rounded border-slate-300 text-coral focus:ring-coral"
+                    />
+                    {col.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-1 bg-gray-100 dark:bg-navy-500 p-0.5 rounded-lg">
           <button
             onClick={() => setViewMode('table')}
             className={cn(
@@ -2441,6 +2785,7 @@ export default function MerchantsPage() {
           >
             <LayoutList className="h-3.5 w-3.5" /> Tier View
           </button>
+          </div>
         </div>
       </div>
 
@@ -2457,21 +2802,24 @@ export default function MerchantsPage() {
               <tr>
                 {(
                   [
-                    { key: 'name', label: 'Name' },
-                    { key: 'segment', label: 'Segment' },
-                    { key: 'category', label: 'Category' },
-                    { key: 'city', label: 'City' },
-                    { key: 'country', label: 'Country' },
-                    { key: 'digitalPresence', label: 'Digital' },
-                    { key: 'outreachStatus', label: 'Status' },
-                    { key: 'priority', label: 'Priority' },
-                    { key: 'lastContactDate', label: 'Last Contact' },
-                  ] as { key: SortKey; label: string }[]
+                    { key: 'name', colId: 'name' as ColId, label: 'Name' },
+                    { key: 'segment', colId: 'segment' as ColId, label: 'Segment' },
+                    { key: 'category', colId: 'category' as ColId, label: 'Category' },
+                    { key: 'city', colId: 'city' as ColId, label: 'City' },
+                    { key: 'country', colId: 'country' as ColId, label: 'Country' },
+                    { key: 'digitalPresence', colId: 'digital' as ColId, label: 'Digital' },
+                    { key: 'outreachStatus', colId: 'status' as ColId, label: 'Status' },
+                    { key: 'priority', colId: 'priority' as ColId, label: 'Priority' },
+                    { key: 'lastContactDate', colId: 'lastContact' as ColId, label: 'Last Contact' },
+                  ] as { key: SortKey; colId: ColId; label: string }[]
                 ).map(col => (
                   <th
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide cursor-pointer hover:text-navy dark:hover:text-white select-none"
+                    className={cn(
+                      'px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide cursor-pointer hover:text-navy dark:hover:text-white select-none',
+                      hiddenCols.includes(col.colId) && 'hidden',
+                    )}
                   >
                     <div className="flex items-center gap-1">
                       {col.label}
@@ -2479,11 +2827,15 @@ export default function MerchantsPage() {
                     </div>
                   </th>
                 ))}
+                {/* Assigned To column header */}
+                <th className={cn('px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide', hiddenCols.includes('assignedTo') && 'hidden')}>
+                  Assigned To
+                </th>
                 {/* Completeness column header */}
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                <th className={cn('px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide', hiddenCols.includes('completeness') && 'hidden')}>
                   Completeness
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                <th className={cn('px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide', hiddenCols.includes('health') && 'hidden')}>
                   Health
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Actions</th>
@@ -2549,14 +2901,14 @@ export default function MerchantsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{labelOf(m.segment)}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.category}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{m.city}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">{m.country || '—'}</td>
-                    <td className="px-4 py-3">
+                    <td className={cn('px-4 py-3 text-slate-600 dark:text-slate-300', hiddenCols.includes('segment') && 'hidden')}>{labelOf(m.segment)}</td>
+                    <td className={cn('px-4 py-3 text-slate-600 dark:text-slate-300', hiddenCols.includes('category') && 'hidden')}>{m.category}</td>
+                    <td className={cn('px-4 py-3 text-slate-600 dark:text-slate-300', hiddenCols.includes('city') && 'hidden')}>{m.city}</td>
+                    <td className={cn('px-4 py-3 text-slate-500 dark:text-slate-400 text-xs', hiddenCols.includes('country') && 'hidden')}>{m.country || '—'}</td>
+                    <td className={cn('px-4 py-3', hiddenCols.includes('digital') && 'hidden')}>
                       <Badge variant={digitalPresenceVariant(m.digitalPresence)}>{labelOf(m.digitalPresence)}</Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className={cn('px-4 py-3', hiddenCols.includes('status') && 'hidden')}>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <Badge variant={outreachVariant(m.outreachStatus)}>{labelOf(m.outreachStatus)}</Badge>
                         {due && (
@@ -2564,18 +2916,27 @@ export default function MerchantsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className={cn('px-4 py-3', hiddenCols.includes('priority') && 'hidden')}>
                       <Badge variant={priorityVariant(m.priority)}>{labelOf(m.priority)}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
+                    <td className={cn('px-4 py-3 text-slate-500 dark:text-slate-400 text-xs', hiddenCols.includes('lastContact') && 'hidden')}>
                       {m.lastContactDate ? formatDate(m.lastContactDate) : '—'}
                     </td>
+                    {/* Assigned To cell */}
+                    <td className={cn('px-4 py-3 text-slate-500 dark:text-slate-400 text-xs', hiddenCols.includes('assignedTo') && 'hidden')}>
+                      {m.assignedTo ? (
+                        <div className="flex items-center gap-1">
+                          <UserCircle className="h-3 w-3 shrink-0" />
+                          <span className="truncate max-w-[100px]">{m.assignedTo.split('@')[0]}</span>
+                        </div>
+                      ) : '—'}
+                    </td>
                     {/* Completeness cell */}
-                    <td className="px-4 py-3 w-[120px]">
+                    <td className={cn('px-4 py-3 w-[120px]', hiddenCols.includes('completeness') && 'hidden')}>
                       <CompletenessBar pct={pct} />
                     </td>
                     {/* Health grade cell */}
-                    <td className="px-4 py-3">
+                    <td className={cn('px-4 py-3', hiddenCols.includes('health') && 'hidden')}>
                       {(() => {
                         const h = computeMerchantHealth(m)
                         const gradeColors: Record<string, string> = {
@@ -2715,6 +3076,52 @@ export default function MerchantsPage() {
         onClose={() => setShowImport(false)}
         onImport={handleImport}
       />
+
+      {/* Save View Dialog */}
+      <Dialog open={showSaveViewDialog} onOpenChange={v => !v && setShowSaveViewDialog(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save Current View</DialogTitle>
+            <DialogDescription>Name this filter configuration so you can reapply it with one click.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Emoji</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {SAVE_VIEW_EMOJIS.map(e => (
+                  <button
+                    key={e}
+                    onClick={() => setSaveViewEmoji(e)}
+                    className={cn(
+                      'text-xl p-1.5 rounded-lg border transition-all',
+                      saveViewEmoji === e
+                        ? 'border-coral bg-coral/10'
+                        : 'border-slate-200 dark:border-navy-500 hover:border-coral/40',
+                    )}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>View name</Label>
+              <Input
+                value={saveViewName}
+                onChange={e => setSaveViewName(e.target.value)}
+                placeholder="e.g. Hot Leads, My Merchants..."
+                className="mt-1"
+                onKeyDown={e => e.key === 'Enter' && handleSaveView()}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setShowSaveViewDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveView} disabled={!saveViewName.trim()}>Save View</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </>)}
 
       {/* Bulk Outreach Tool — receives the currently filtered merchant list */}

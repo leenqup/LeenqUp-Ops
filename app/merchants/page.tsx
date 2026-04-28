@@ -638,12 +638,14 @@ function ImportDialog({ open, onClose, onImport }: { open: boolean; onClose: () 
 interface SlideOverProps {
   merchant: Merchant | null
   scripts: Script[]
+  currentUserEmail?: string
+  allAssignees?: string[]
   onClose: () => void
   onUpdate: (m: Merchant) => void
   onDelete: (id: string) => void
 }
 
-function MerchantSlideOver({ merchant, scripts, onClose, onUpdate, onDelete }: SlideOverProps) {
+function MerchantSlideOver({ merchant, scripts, currentUserEmail, allAssignees = [], onClose, onUpdate, onDelete }: SlideOverProps) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState<Merchant | null>(null)
@@ -956,6 +958,15 @@ function MerchantSlideOver({ merchant, scripts, onClose, onUpdate, onDelete }: S
                       <SelectContent>{PRIORITIES.map(p => <SelectItem key={p} value={p}>{labelOf(p)}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs text-slate-500">Assigned To</Label>
+                    <Input
+                      value={form.assignedTo ?? ''}
+                      onChange={e => set('assignedTo', e.target.value)}
+                      placeholder="email@example.com"
+                      className="mt-1 h-8 text-sm"
+                    />
+                  </div>
                 </>
               ) : (
                 <>
@@ -965,6 +976,11 @@ function MerchantSlideOver({ merchant, scripts, onClose, onUpdate, onDelete }: S
                   <FieldRow label="Country" value={merchant.country} />
                   <FieldRow label="Operating Status" value={labelOf(merchant.operatingStatus)} />
                   <FieldRow label="Digital Presence" value={<Badge variant={digitalPresenceVariant(merchant.digitalPresence)}>{labelOf(merchant.digitalPresence)}</Badge>} />
+                  <FieldRow label="Assigned To" value={
+                    merchant.assignedTo
+                      ? <span className="flex items-center gap-1"><UserCircle className="h-3.5 w-3.5 text-slate-400" />{merchant.assignedTo.split('@')[0]}</span>
+                      : '—'
+                  } />
                 </>
               )}
             </div>
@@ -1103,6 +1119,53 @@ function MerchantSlideOver({ merchant, scripts, onClose, onUpdate, onDelete }: S
                     View script <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
+              </div>
+
+              {/* Assigned To — quick-assign without entering Edit mode */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="text-xs text-slate-500">Assigned To</Label>
+                  {currentUserEmail && form.assignedTo !== currentUserEmail && (
+                    <button
+                      onClick={() => {
+                        const updated = { ...form, assignedTo: currentUserEmail }
+                        setForm(updated)
+                        onUpdate(updated)
+                        toast('Assigned to you')
+                      }}
+                      className="text-xs text-coral hover:underline"
+                    >
+                      Assign to Me
+                    </button>
+                  )}
+                </div>
+                <Select
+                  value={form.assignedTo || '__none__'}
+                  onValueChange={v => {
+                    const val = v === '__none__' ? '' : v
+                    const updated = { ...form, assignedTo: val }
+                    setForm(updated)
+                    onUpdate(updated)
+                  }}
+                >
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {currentUserEmail && (
+                      <SelectItem value={currentUserEmail}>
+                        Me ({currentUserEmail.split('@')[0]})
+                      </SelectItem>
+                    )}
+                    {allAssignees
+                      .filter(e => e !== currentUserEmail)
+                      .map(email => (
+                        <SelectItem key={email} value={email}>
+                          {email.split('@')[0]}
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </section>
@@ -1724,6 +1787,12 @@ export default function MerchantsPage() {
   )
   const countries = useMemo(
     () => Array.from(new Set(merchants.map(m => m.country).filter(Boolean))).sort() as string[],
+    [merchants]
+  )
+
+  // All unique emails that have been assigned to at least one merchant
+  const assignees = useMemo(
+    () => Array.from(new Set(merchants.map(m => m.assignedTo).filter(Boolean))).sort() as string[],
     [merchants]
   )
 
@@ -2709,8 +2778,18 @@ export default function MerchantsPage() {
                   <SelectContent>
                     <SelectItem value="__all__">Anyone</SelectItem>
                     {user?.email && (
-                      <SelectItem value={user.email}>Assigned to Me</SelectItem>
+                      <SelectItem value={user.email}>
+                        Assigned to Me ({user.email.split('@')[0]})
+                      </SelectItem>
                     )}
+                    {assignees
+                      .filter(e => e !== user?.email)
+                      .map(email => (
+                        <SelectItem key={email} value={email}>
+                          {email.split('@')[0]}
+                        </SelectItem>
+                      ))
+                    }
                   </SelectContent>
                 </Select>
               </div>
@@ -3059,6 +3138,8 @@ export default function MerchantsPage() {
         <MerchantSlideOver
           merchant={selectedMerchant}
           scripts={scripts}
+          currentUserEmail={user?.email ?? undefined}
+          allAssignees={assignees}
           onClose={() => setSelectedMerchant(null)}
           onUpdate={handleUpdateMerchant}
           onDelete={handleDeleteMerchant}

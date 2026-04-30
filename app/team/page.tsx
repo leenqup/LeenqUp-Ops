@@ -16,6 +16,7 @@ import {
   Loader2,
   Link as LinkIcon,
   Crown,
+  ArrowRight,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,8 +31,16 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from '@/components/ui/toaster'
 import { useAuth } from '@/components/auth-provider'
+import { getMerchants, saveMerchants, getDeals, saveDeals } from '@/lib/storage'
 import type { TeamMember, TeamRole } from '@/types'
 
 // ── Role config ───────────────────────────────────────────────
@@ -70,6 +79,9 @@ export default function TeamPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteResult, setInviteResult] = useState<{ acceptUrl: string; emailSent: boolean } | null>(null)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [bulkFromEmail, setBulkFromEmail] = useState('')
+  const [bulkToEmail, setBulkToEmail] = useState('')
+  const [bulkReassigning, setBulkReassigning] = useState(false)
   const { role: currentRole, isAdmin, user } = useAuth()
 
   const loadMembers = async () => {
@@ -156,6 +168,37 @@ export default function TeamPage() {
     } catch {
       toast('Failed to update status')
     }
+  }
+
+  const handleBulkReassign = () => {
+    if (!bulkFromEmail || !bulkToEmail || bulkFromEmail === bulkToEmail) return
+    setBulkReassigning(true)
+    try {
+      // Reassign merchants
+      const merchants = getMerchants()
+      const updatedMerchants = merchants.map(m =>
+        m.assignedTo === bulkFromEmail ? { ...m, assignedTo: bulkToEmail } : m
+      )
+      saveMerchants(updatedMerchants)
+      const merchantCount = updatedMerchants.filter(m => m.assignedTo === bulkToEmail).length - merchants.filter(m => m.assignedTo === bulkToEmail).length
+
+      // Reassign deals
+      const deals = getDeals()
+      const updatedDeals = deals.map(d =>
+        d.assignedTo === bulkFromEmail ? { ...d, assignedTo: bulkToEmail } : d
+      )
+      saveDeals(updatedDeals)
+      const dealCount = updatedDeals.filter(d => d.assignedTo === bulkToEmail).length - deals.filter(d => d.assignedTo === bulkToEmail).length
+
+      const fromName = bulkFromEmail.split('@')[0]
+      const toName = bulkToEmail.split('@')[0]
+      toast(`Reassigned ${merchantCount} merchant${merchantCount !== 1 ? 's' : ''} and ${dealCount} deal${dealCount !== 1 ? 's' : ''} from ${fromName} to ${toName}`)
+      setBulkFromEmail('')
+      setBulkToEmail('')
+    } catch {
+      toast('Reassignment failed — please try again')
+    }
+    setBulkReassigning(false)
   }
 
   const copyUrl = (url: string) => {
@@ -331,6 +374,58 @@ export default function TeamPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bulk Reassign — admin only */}
+      {isAdmin && members.length > 1 && (
+        <Card className="mt-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ArrowRight className="h-4 w-4 text-slate-400" />
+              Bulk Reassign
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Move all merchants and CRM deals assigned to one team member to another — useful when someone leaves or roles change.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3">
+              <div className="flex-1 space-y-1 w-full">
+                <Label className="text-xs text-slate-500">From (current assignee)</Label>
+                <Select value={bulkFromEmail || '__none__'} onValueChange={v => setBulkFromEmail(v === '__none__' ? '' : v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select member" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Select member…</SelectItem>
+                    {members.map(m => (
+                      <SelectItem key={m.id} value={m.email}>{m.name} ({m.email.split('@')[0]})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate-300 flex-shrink-0 mt-5 hidden sm:block" />
+              <div className="flex-1 space-y-1 w-full">
+                <Label className="text-xs text-slate-500">To (new assignee)</Label>
+                <Select value={bulkToEmail || '__none__'} onValueChange={v => setBulkToEmail(v === '__none__' ? '' : v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select member" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Select member…</SelectItem>
+                    {members.filter(m => m.email !== bulkFromEmail).map(m => (
+                      <SelectItem key={m.id} value={m.email}>{m.name} ({m.email.split('@')[0]})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={handleBulkReassign}
+                disabled={!bulkFromEmail || !bulkToEmail || bulkFromEmail === bulkToEmail || bulkReassigning}
+                size="sm"
+                className="bg-navy hover:bg-navy/90 text-white flex-shrink-0"
+              >
+                {bulkReassigning ? 'Reassigning…' : 'Reassign all'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={o => { setShowInviteDialog(o); if (!o) { setInviteEmail(''); setInviteName(''); setInviteResult(null) } }}>

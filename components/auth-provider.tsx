@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { setCurrentUser } from '@/lib/storage'
 import type { TeamRole } from '@/types'
 
 interface AuthContextValue {
@@ -40,12 +41,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
       setLoading(false)
+      if (user?.email) {
+        const name = (user.user_metadata?.name as string) || (user.user_metadata?.full_name as string) || ''
+        setCurrentUser(user.email, name)
+      }
     })
 
     // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      const u = session?.user ?? null
+      setUser(u)
       setLoading(false)
+      if (u?.email) {
+        const name = (u.user_metadata?.name as string) || (u.user_metadata?.full_name as string) || ''
+        setCurrentUser(u.email, name)
+      }
     })
 
     return () => subscription.unsubscribe()

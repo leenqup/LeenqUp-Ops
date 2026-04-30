@@ -91,6 +91,7 @@ import {
   deleteSavedView,
   getHiddenColumns,
   setHiddenColumns,
+  logActivity,
 } from '@/lib/storage'
 import { supabase, mapMerchantRow } from '@/lib/supabase'
 import { computeMerchantHealth } from '@/lib/merchant-health'
@@ -115,6 +116,7 @@ import type {
   SavedView,
   FilterSnapshot,
   ColId,
+  TeamMember,
 } from '@/types'
 
 // ─── Types & Helpers ──────────────────────────────────────────────────────────
@@ -1719,6 +1721,20 @@ export default function MerchantsPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showBulkOutreach, setShowBulkOutreach] = useState(false)
+  const [teamMembers, setTeamMembers] = useState<Pick<TeamMember, 'email' | 'name'>[]>([])
+
+  // Load real team member list so the assignee select is always populated
+  useEffect(() => {
+    fetch('/api/team/invite')
+      .then(r => r.ok ? r.json() : { members: [] })
+      .then((data: { members?: TeamMember[] }) => {
+        const active = (data.members ?? [])
+          .filter(m => m.status !== 'revoked')
+          .map(m => ({ email: m.email, name: m.name }))
+        setTeamMembers(active)
+      })
+      .catch(() => {/* silent — team list is enhancement only */})
+  }, [])
 
   useEffect(() => {
     initializeStorage()
@@ -1790,11 +1806,12 @@ export default function MerchantsPage() {
     [merchants]
   )
 
-  // All unique emails that have been assigned to at least one merchant
-  const assignees = useMemo(
-    () => Array.from(new Set(merchants.map(m => m.assignedTo).filter(Boolean))).sort() as string[],
-    [merchants]
-  )
+  // Assignee options: team members from API + any emails already on merchant records (legacy data)
+  const assignees = useMemo(() => {
+    const teamEmails = teamMembers.map(m => m.email)
+    const merchantEmails = merchants.map(m => m.assignedTo).filter(Boolean) as string[]
+    return Array.from(new Set([...teamEmails, ...merchantEmails])).sort()
+  }, [teamMembers, merchants])
 
   const allFiltered = useMemo(() =>
     merchants
@@ -1855,10 +1872,23 @@ export default function MerchantsPage() {
   }
 
   const handleUpdateMerchant = useCallback((m: Merchant) => {
+    // Log assignment changes explicitly so the feed shows who was assigned
+    const prev = merchants.find(x => x.id === m.id)
+    if (prev && prev.assignedTo !== m.assignedTo) {
+      logActivity({
+        entityType: 'merchant',
+        action: 'updated',
+        entityId: m.id,
+        entityName: m.name,
+        detail: m.assignedTo
+          ? `Assigned to ${m.assignedTo}`
+          : 'Unassigned',
+      })
+    }
     upsertMerchant(m)
     setMerchants(getMerchants())
     if (selectedMerchant?.id === m.id) setSelectedMerchant(m)
-  }, [selectedMerchant])
+  }, [selectedMerchant, merchants])
 
   const handleDeleteMerchant = useCallback((id: string) => {
     deleteMerchant(id)

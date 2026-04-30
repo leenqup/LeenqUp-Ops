@@ -663,10 +663,13 @@ export function getActivityFeed(): ActivityEntry[] {
 }
 
 export function logActivity(
-  entry: Omit<ActivityEntry, 'id' | 'timestamp'>
+  entry: Omit<ActivityEntry, 'id' | 'timestamp' | 'userEmail' | 'userName'> & { userEmail?: string; userName?: string }
 ): void {
+  const { userEmail, userName } = currentUser()
   const feed = getActivityFeed()
   const newEntry: ActivityEntry = {
+    userEmail,
+    userName,
     ...entry,
     id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     timestamp: new Date().toISOString(),
@@ -675,12 +678,22 @@ export function logActivity(
   setItem(KEYS.activityFeed, trimmed)
 }
 
-/** Convenience: stub user identity for feed entries (real identity from Supabase session) */
+/** Module-level identity set by auth layer at login — never persisted, resets on reload */
+let _currentUser: { userEmail: string; userName: string } = {
+  userEmail: 'team@leenqup.com',
+  userName: 'Team',
+}
+
+/**
+ * Set the current authenticated user so activity feed entries carry real attribution.
+ * Call this from AuthProvider (or root layout) immediately after the Supabase session resolves.
+ */
+export function setCurrentUser(email: string, name: string): void {
+  _currentUser = { userEmail: email, userName: name || email.split('@')[0] }
+}
+
 function currentUser(): { userEmail: string; userName: string } {
-  return {
-    userEmail: 'team@leenqup.com',
-    userName: 'Team',
-  }
+  return _currentUser
 }
 
 // ──────────────────────────────────────────────────────────────

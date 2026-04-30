@@ -44,6 +44,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { RoleGate } from '@/components/role-gate'
+import { useAuth } from '@/components/auth-provider'
 import {
   getDeals,
   upsertDeal,
@@ -53,7 +54,7 @@ import {
   getMerchants,
   initializeStorage,
 } from '@/lib/storage'
-import type { Deal, DealStage, DealActivity, Merchant } from '@/types'
+import type { Deal, DealStage, DealActivity, Merchant, TeamMember } from '@/types'
 import { differenceInDays, parseISO } from 'date-fns'
 
 // ── Stage config ──────────────────────────────────────────────
@@ -165,6 +166,8 @@ function DealSlideOver({
   onClose,
   onSave,
   onDelete,
+  teamMembers = [],
+  currentUserEmail,
 }: {
   deal: Deal | null
   merchant: Merchant | undefined
@@ -172,6 +175,8 @@ function DealSlideOver({
   onClose: () => void
   onSave: (deal: Deal) => void
   onDelete: (id: string) => void
+  teamMembers?: Pick<TeamMember, 'email' | 'name'>[]
+  currentUserEmail?: string
 }) {
   const [local, setLocal] = useState<Deal | null>(null)
   const [newActivity, setNewActivity] = useState('')
@@ -350,12 +355,28 @@ function DealSlideOver({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-xs text-slate-400">Assigned To</Label>
-            <Input
-              value={local.assignedTo ?? ''}
-              onChange={e => patch({ assignedTo: e.target.value || undefined })}
-              className="h-8 text-sm"
-              placeholder="Team member"
-            />
+            <Select
+              value={local.assignedTo || '__none__'}
+              onValueChange={v => patch({ assignedTo: v === '__none__' ? undefined : v })}
+            >
+              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Unassigned</SelectItem>
+                {currentUserEmail && (
+                  <SelectItem value={currentUserEmail}>
+                    Me ({currentUserEmail.split('@')[0]})
+                  </SelectItem>
+                )}
+                {teamMembers
+                  .filter(m => m.email !== currentUserEmail)
+                  .map(m => (
+                    <SelectItem key={m.email} value={m.email}>
+                      {m.name || m.email.split('@')[0]}
+                    </SelectItem>
+                  ))
+                }
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-slate-400">Actual GMV ($)</Label>
@@ -463,12 +484,14 @@ function DealSlideOver({
 // ── Main CRM Page ─────────────────────────────────────────────
 export default function CRMPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [deals, setDeals] = useState<Deal[]>([])
   const [merchants, setMerchants] = useState<Merchant[]>([])
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
   const [slideOverOpen, setSlideOverOpen] = useState(false)
   const [showNewDeal, setShowNewDeal] = useState(false)
   const [forecastOpen, setForecastOpen] = useState(false)
+  const [teamMembers, setTeamMembers] = useState<Pick<TeamMember, 'email' | 'name'>[]>([])
 
   // New deal form
   const [newMerchantId, setNewMerchantId] = useState('')
@@ -481,6 +504,16 @@ export default function CRMPage() {
   useEffect(() => {
     initializeStorage()
     reload()
+    fetch('/api/team/invite')
+      .then(r => r.ok ? r.json() : { members: [] })
+      .then((data: { members?: TeamMember[] }) => {
+        setTeamMembers(
+          (data.members ?? [])
+            .filter(m => m.status !== 'revoked')
+            .map(m => ({ email: m.email, name: m.name }))
+        )
+      })
+      .catch(() => {})
   }, [])
 
   function reload() {
@@ -906,6 +939,8 @@ export default function CRMPage() {
         onClose={() => setSlideOverOpen(false)}
         onSave={saveDeal}
         onDelete={removeDeal}
+        teamMembers={teamMembers}
+        currentUserEmail={user?.email ?? undefined}
       />
     </>
   )
